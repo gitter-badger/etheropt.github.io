@@ -1,5 +1,5 @@
 <% options.sort(function(a,b){ return a.expiration<b.expiration || a.expiration==b.expiration && a.strike<b.strike ? -1 : 1 }); %>
-<% expirations = options.map(function(x){return x.expiration}).getUnique() %>
+<% expiration_pairs = options.map(function(x){return x.expiration+" "+x.fromcur+"/"+x.tocur}).getUnique() %>
 <table class="table table-hover">
   <tr>
     <th>Expiration/Strike</th>
@@ -7,15 +7,15 @@
     <th>Best offer</th>
     <th>My position</th>
   </tr>
-  <% expirations.forEach(function(expiration) { %>
-    <% expiration_options = options.filter(function(x){return x.expiration==expiration}) %>
+  <% expiration_pairs.forEach(function(expiration_pair) { %>
+    <% filtered_options = options.filter(function(x){return x.expiration+" "+x.fromcur+"/"+x.tocur==expiration_pair}) %>
       <tr>
-        <td><strong><%= expiration %></strong></td>
+        <td><strong><%= expiration_pair %></strong></td>
         <td></td>
         <td></td>
         <td>Cash: <%= bundle.utility.weiToEth(expiration_options[0].cash) %> eth</td>
       </tr>
-      <% expiration_options.forEach(function(option){ %>
+      <% filtered_options.forEach(function(option){ %>
         <tr>
           <td><%= option.strike %></td>
           <td>
