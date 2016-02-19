@@ -10,6 +10,13 @@ var async = (typeof(window) === 'undefined') ? _dereq_('async') : _dereq_('async
 var addrs = [config.eth_addr];
 var pks = [config.eth_addr_pk];
 var selectedAddr = 0;
+var cookie = readCookie("user");
+if (cookie) {
+  cookie = JSON.parse(cookie);
+  addrs = cookie["addrs"];
+  pks = cookie["pks"];
+  selectedAddr = cookie["selectedAddr"];
+}
 var nonce = undefined;
 var funds = 0;
 var fundsAvailable = 0;
@@ -22,10 +29,15 @@ Main.alertInfo = function(message) {
   Main.externalLinks();
 }
 Main.alertTxHash = function(txHash) {
-  Main.alertInfo('You just created an Ethereum transaction. Track its progress here: <a href="http://'+(config.eth_testnet ? 'testnet' : 'api')+'.etherscan.io/tx/'+txHash+'" target="_blank">'+txHash+'</a>.');
+  Main.alertInfo('You just created an Ethereum transaction. Track its progress here: <a href="http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io/tx/'+txHash+'" target="_blank">'+txHash+'</a>.');
 }
 Main.tooltip = function(message) {
   return '<a href="#" data-toggle="tooltip" data-placement="bottom" title="'+message+'"><i class="fa fa-question-circle fa-lg"></i></a>';
+}
+Main.tooltips = function() {
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  });
 }
 Main.externalLinks = function() {
   $('a[target=_blank]').on('click', function(){
@@ -33,10 +45,45 @@ Main.externalLinks = function() {
     return false;
   });
 }
-Main.tooltips = function() {
-  $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
-  });
+Main.createCookie = function(name,value,days) {
+  if (localStorage) {
+    localStorage.setItem(name, value);
+  } else {
+    if (days) {
+      var date = new Date();
+      date.setTime(date.getTime()+(days*24*60*60*1000));
+      var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+  }
+}
+Main.readCookie = function(name) {
+  if (localStorage) {
+    return localStorage.getItem(name);
+  } else {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+      var c = ca[i];
+      while (c.charAt(0)==' ') c = c.substring(1,c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+  }
+}
+Main.eraseCookie = function(name) {
+  if (localStorage) {
+    localStorage.removeItem(name);
+  } else {
+    createCookie(name,"",-1);
+  }
+}
+Main.logout = function() {
+  addrs = [config.eth_addr];
+  pks = [config.eth_addr_pk];
+  selectedAddr = 0;
+  refresh();
 }
 Main.buy = function(optionChainID, optionID, price, size) {
   size = utility.ethToWei(size);
@@ -88,14 +135,20 @@ Main.cancelOrders = function() {
     Main.alertTxHash(txHash);
   });
 }
-Main.loadAddresses = function() {
+Main.connectionTest = function() {
+  var connection = undefined;
   try {
-    //if we are connected to geth, no need to have a private key in the "add address" form
     web3.eth.getBalance('0x0000000000000000000000000000000000000000');
-    console.log('We are connected to geth.');
-    $('#pk_div').hide();
+    connection = {connection: 'Geth', provider: config.eth_provider, testnet: config.eth_testnet};
   } catch(err) {
-    console.log('We are not connected to geth. We are using the proxy. '+err);
+    connection = {connection: 'Proxy', provider: 'http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io', testnet: config.eth_testnet};
+  }
+  new EJS({url: config.home_url+'/'+'connection.ejs'}).update('connection', connection);
+  return connection;
+}
+Main.loadAddresses = function() {
+  if (Main.connectionTest().connection=='Geth') {
+    $('#pk_div').hide();
   }
   async.map(addrs,
     function(addr, callback) {
@@ -220,6 +273,8 @@ Main.loadMarket = function() {
   });
 }
 Main.refresh = function() {
+  Main.setCookie("user", JSON.stringify({"addrs": addrs, "pks": pks, "selectedAddr": selectedAddr}), 999);
+  Main.connectionTest();
   Main.loadMarket();
   Main.loadAddresses();
   Main.loadFunds();

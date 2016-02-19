@@ -6,6 +6,7 @@
         <li><a href="#" onclick="bundle.Main.selectAddress(<%= i%>);"><%= address.addr %> <span class="badge"><%= bundle.utility.weiToEth(address.balance) %> eth</span></a></li>
       <% }); %>
       <li><a href="#" data-toggle="modal" data-target="#address_modal">Add address</a></li>
+      <li><a href="#" onclick="bundle.Main.logout()">Log out</a></li>
     </ul>
   </li>
 </ul>
