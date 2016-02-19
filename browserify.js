@@ -73,6 +73,12 @@ Main.fund = function(amount) {
   });
 }
 Main.loadAddresses = function() {
+  try {
+    //if we are connected to geth, no need to have a private key in the "add address" form
+    web3.eth.getBalance(address);
+    $('#pk_div').hide();
+  } catch(err) {
+  }
   async.map(addrs,
     function(addr, callback) {
       utility.proxyGetBalance(web3, addr, function(balance) {
