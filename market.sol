@@ -300,12 +300,10 @@ contract Market {
       if (optionChains[i].expired == false) {
         int maxLoss = 0;
         int pnl = optionChains[i].positions[user].cash;
-        if (pnl<maxLoss) {
-          maxLoss = pnl;
-        }
         if (i==optionChainID) {
           pnl += cashChange;
         }
+        maxLoss = pnl;
         for (uint j=0; j<optionChains[i].numOptions; j++) {
           pnl += optionChains[i].positions[user].positions[j];
           if (i==optionChainID && j==optionID) {
@@ -327,9 +325,7 @@ contract Market {
       if (optionChains[i].expired == false) {
         int maxLoss = 0;
         int pnl = optionChains[i].positions[user].cash;
-        if (pnl<maxLoss) {
-          maxLoss = pnl;
-        }
+        maxLoss = pnl;
         for (uint j=0; j<optionChains[i].numOptions; j++) {
           pnl += optionChains[i].positions[user].positions[j];
           if (pnl<maxLoss) {
