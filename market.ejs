@@ -13,7 +13,7 @@
         <td><strong><%= expiration_pair %></strong></td>
         <td></td>
         <td></td>
-        <td>Cash: <%= bundle.utility.weiToEth(expiration_options[0].cash) %> eth</td>
+        <td>Cash: <%= bundle.utility.weiToEth(filtered_options[0].cash) %> eth</td>
       </tr>
       <% filtered_options.forEach(function(option){ %>
         <tr>

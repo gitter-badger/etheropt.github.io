@@ -141,7 +141,6 @@ Main.loadMarket = function() {
                   option.sig_r = result.signature_v2.sig_r;
                   option.sig_s = result.signature_v2.sig_s;
                   option.sig_v = result.signature_v2.sig_v;
-                  // document.getElementById("content").innerHTML += "<br />"+id;
                   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionBuyOrders', [option.optionChainID, option.optionID], function(result) {
                     var orders = [];
                     for (var i=0; i<result[0].length; i++) {
