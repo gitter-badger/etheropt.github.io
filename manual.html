@@ -31,11 +31,78 @@
 
     <div id="content">
       <h1>Introduction</h1>
-
+        <p>Etheropt is a decentralized options exchange built on <a href="https://ethereum.org/" target="_blank">Ethereum</a>. The options are <a href="https://en.wikipedia.org/wiki/Binary_option" target="_blank">binary call options</a> on the price of Ethereum in USD as reported by <a href="https://poloniex.com/exchange#btc_eth" target="_blank">Poloniex</a> and <a href="http://www.coindesk.com/price/" target="_blank">Coindesk</a> and verified by <a href="https://www.realitykeys.com/" target="_blank">Reality Keys</a>. Etheropt has no owner. Its entire operation is described and executed by an Ethereum <a href="https://github.com/Etherboost/etheropt/blob/master/market.sol" target="_blank">smart contract</a>.</p>
+      <h1>Installation</h1>
+        <p>In order to ease interaction with the smart contract, Etheropt has a graphical user interface (GUI).</p>
+        <p>There is no installation necessary to use the GUI. Just go to the main <a href="http://etherboost.github.io/etheropt" target="_blank">Etheropt page</a> and the GUI will be running in your Web browser. You can also choose to download the <a href="https://github.com/Etherboost/etheropt" target="_blank">GitHub repository</a> and run the GUI locally.</p>
+      <h1>Ethereum network</h1>
+        <p>The GUI can connect to the Ethereum network in one of two ways. If you have Geth running locally in RPC mode (at http://localhost:8545), Etheropt will automatically connect to it. If you don't have Geth running locally, Etheropt will connect to the Ethereum network through the public API provided by <a href="http://etherscan.io/" target="_blank">Etherscan</a>. You can find out whether your are connected to Geth or Etherscan by clicking the <i class="fa fa-align-justify"></i> icon in the lower right of the screen.</p>
+      <h1>Addresses</h1>
+        <p>In the bar at the top of the GUI, there is a dropdown on the far right. The first time you load the GUI, you will see it is initialized with the zero address (0x0000000000000000000000000000000000000000). You can click the dropdown and choose "Add address" to add your own Ethereum address. You will need to do this in order to add funds and make trades on Etheropt. If you are using Geth, make sure you have unlocked the appropriate address by using the "personal.unlockAccount('0x...', 'password')" command. If you are not using Geth, you will need to enter your private key associated with your address in order to send transactions via the Etherscan API. If you need a new address/private key combination to use with Etheropt, you can go to <a href="https://www.myetherwallet.com/" target="_blank">MyEtherWallet</a> and use the address and unencrypted private key it generates.</p>
+      <h1>Adding / withdrawing funds</h1>
+        <p>In the bar at the top of the GUI, there is a "Funds" number and an "Available" number. The "Funds" number is the total amount you have deposited to Etheropt. The "Available" number is the total amount that is available to invest or withdraw. Click the "Funds" number and a dialog box will help you add funds. Click the "Available" number and a dialog box will help you withdraw funds.</p>
+      <h1>Contracts</h1>
+        <p>The smart contract has an administrator account listed. The administrator is the only person who can add contracts to Etheropt. A contract consists of an expiration, a strike, and an underlying (ETH/USD). All contracts are binary call options. For example, if you buy 10 eth worth of the 5 call expiring March 1 for 0.2000, you will make 8 eth if ETH/USD expires at or above 5 and you will lose 2 eth if ETH/USD expires below 5.</p>
+      <h1>Placing orders</h1>
+        <p>To place an order, simply click the buy or sell button next to the contract and enter the size and price you wish to trade.</p>
+        <p>If you place an order but you don't have enough available funds in your account, the order will be cancelled. If your order does not execute immediately, it will rest on the order book. If at any time someone tries to trade with your order and you no longer have enough available funds, your resting order will be cancelled. Note that there could be resting orders that no longer have available funds in the book. If you try to trade with them, they will be cancelled automatically. You can always cancel all your outstanding orders by clicking the "Cancel all my orders" button at the bottom of the screen.</p>
+      <h1>Cash usage and expiration</h1>
+        <p>Every contract shows your current position under "My position". Every expiration also shows you your cash usage. When you buy an option, your cash usage becomes more negative. When you sell an option, your cash usage becomes more positive. For example, if you buy 10 eth worth of the 5 call expiring March 1 for 0.2000, your cash usage will decrease by 2 eth. If you had sold the option, your cash usage would increase by 2 eth.</p>
+        <p>After expiration, the contracts belonging to an expiration must be expired. Anyone can do this using the expire.js script, or the contract administrator will do it for everyone.</p>
+        <p>It is worth noting how exactly expiration works. For example, if you buy 10 eth worth of the 5 call expiring March 1 for 0.2000, your cash usage becomes -2 eth and your position is 10 eth. If ETH/USD expires at or above 5, your funds change by -2 eth + 10 eth = 8 eth. If ETH/USD expires below 5, your funds change by -2 eth. Similarly, if you had been short the option, your possible balance changes would be -8 eth if ETH/USD expired at or above 5 and +2 eth if ETH/ISD expired below 5.</p>
+        <p>At any given time, your available funds will be equal to the funds you deposited plus the maximum possible loss you could end up with from expiring options.</p>
+      <h1>The smart contract</h1>
+        The Solidity code for the smart contract can be found in the GitHub repository at <a href="https://github.com/Etherboost/etheropt/blob/master/market.sol" target="_blank">market.sol</a>. It has been compiled and deployed to the Ethereum network. You are encouraged to read and understand it yourself. You may even want to write your own code to generate transactions to send to the smart contract instead of using the GUI. The contract's functions are listed below.</p>
+        <h2>addFunds()</h2>
+          <p>This function adds the sent value to the user's account.</p>
+        <h2>withdrawFunds(uint amount)</h2>
+          <p>This function withdraw's the specified amount from the user's account and cancels all the user's outstanding orders. If the user doesn't have enough available funds to cover the withdrawal, then no withdrawal takes place.</p>
+        <h2>getFunds(address user) constant returns(int)</h2>
+          <p>This function gets the total sum of all deposits less withdrawals in the user's account.</p>
+        <h2>getAvailableFunds(address user) constant returns(int)</h2>
+          <p>This function gets the available funds in the user's account.</p>
+        <h2>expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>
+          <p>This function expires the specified option chain if all the provided signatures and values are valid.</p>
+        <h2>addOptionChain(uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
+          <p>This function can only be run by the administrator. It adds an option chain, which consists of a collection of strikes and their associated Reality Key IDs and hashes.</p>
+        <h2>getNumOptionChains() constant returns(uint)</h2>
+          <p>This function returns the number of option chains.</p>
+        <h2>getNumOptions(uint optionChainID) constant returns(uint)</h2>
+          <p>This function returns the number of options associated with the specified option chain.</p>
+        <h2>getOption(uint optionChainID, uint optionID) constant returns(uint, uint, bytes32, address)</h2>
+          <p>This function looks up an option and returns its Reality Keys ID, strike, fact hash, and signing address.</p>
+        <h2>getPosition(uint optionChainID, uint optionID, address user) constant returns(int)</h2>
+          <p>This function gets the user's current position on a particular option.</p>
+        <h2>getCash(uint optionChainID, address user) constant returns(int)</h2>
+          <p>This function gets the user's current cash usage on a particular option chain.</p>
+        <h2>placeBuyOrder(uint optionChainID, uint optionID, uint price, uint size)</h2>
+          <p>This function places a buy order, executes it against existing sell orders, and leaves the remainder on the book. If the user does not have enough available funds, the order will be cancelled. Also, any sell orders that would otherwise be immediatelly executed against this order but don't have enough available funds will be cancelled.</p>
+        <h2>placeSellOrder(uint optionChainID, uint optionID, uint price, uint size)</h2>
+          <p>This function is similar to placeBuyOrder.</p>
+        <h2>orderMatchBuy(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID)</h2> private returns(uint)</h2>
+          <p>This function is used by orderMatchSell to match the new sell order with an existing buy order.</p>
+        <h2>orderMatchSell(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID)</h2> private returns(uint)</h2>
+          <p>This function is used by orderMatchBuy to match the new buy order with an existing sell order.</p>
+        <h2>getOptionBuyOrders(uint optionChainID, uint optionID) constant returns(uint[], uint[])</h2>
+          <p>This function returns the top three buy prices and sizes. If there is more than one order at a particular price, then the volume is aggregated.</p>
+        <h2>getOptionSellOrders(uint optionChainID, uint optionID) constant returns(uint[], uint[])</h2>
+          <p>This function is similar to getOptionBuyOrders.</p>
+        <h2>cancelOrders()</h2>
+          <p>This function cancels all the user's outstanding orders in all options.</p>
+        <h2>cancelOrdersOnChain(uint optionChainID)</h2>
+          <p>This function cancels all the user's oustanding orders in the specified option chain.</p>
+        <h2>getMaxLossAfterTrade(address user, uint optionChainID, uint optionID, int positionChange, int cashChange) constant returns(int)</h2>
+          <p>This function returns the user's maximum possible loss after doing the specified trade.</p>
+        <h2>getMaxLoss(address user) constant returns(int)</h2>
+          <p>This function returns the user's maximum possible loss after expiring all options.</p>
+        <h2>min(uint a, uint b) constant returns(uint)</h2>
+          <p>This function returns the minimum of two numbers.</p>
+        <h2>max(uint a, uint b) constant returns(uint)</h2>
+          <p>This function returns the maximum of two numbers.</p>
     </div>
 
     <div id="footer">
-      Etheropt is open source on <a href="https://github.com/Etherboost/etheropt" target="_blank">GitHub</a>. Documentation can be found in the <a href="http://etherboost.github.io/etheropt/manual" target="_blank">Manual</a>.
+      <a href="http://etherboost.github.io/etheropt" target="_blank">Etheropt</a> is open source on <a href="https://github.com/Etherboost/etheropt" target="_blank">GitHub</a>. Documentation can be found in the <a href="http://etherboost.github.io/etheropt/manual" target="_blank">Manual</a>. Come <a href="http://chatcave.me/chat/etherboost/index.php" target="_blank">chat</a> with us.
     </div>
 
   </body>
