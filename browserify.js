@@ -2,7 +2,6 @@ var Web3 = require('web3');
 var config = require('./config.js');
 var utility = require('./utility.js');
 var request = require('request');
-var open = require("open");
 var async = (typeof(window) === 'undefined') ? require('async') : require('async/dist/async.min.js');
 
 function Main() {
@@ -10,7 +9,6 @@ function Main() {
 //functions
 Main.alertInfo = function(message) {
   $('#alerts').append('<div class="alert alert-info"><button type="button" class="close" data-dismiss="alert">&times;</button>' + message + '</div>');
-  Main.externalLinks();
 }
 Main.alertTxHash = function(txHash) {
   Main.alertInfo('You just created an Ethereum transaction. Track its progress here: <a href="http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io/tx/'+txHash+'" target="_blank">'+txHash+'</a>.');
@@ -26,12 +24,6 @@ Main.tooltips = function() {
 Main.popovers = function() {
   $(function () {
     $('[data-toggle="popover"]').popover()
-  });
-}
-Main.externalLinks = function() {
-  $('a[target=_blank]').on('click', function(){
-    open(this.href);
-    return false;
   });
 }
 Main.createCookie = function(name,value,days) {
