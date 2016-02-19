@@ -62,9 +62,9 @@ function writeFile(filename, data) {
 }
 
 function proxyGetBalance(web3, address, callback) {
-  if (web3.currentProvider) {
+  try {
     callback(web3.eth.getBalance(address));
-  } else {
+  } catch(err) {
     var url = 'http://'+(config.testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=account&action=balance&address='+address+'&tag=latest';
     request.get(url, function(err, httpResponse, body){
       if (!err) {
@@ -76,9 +76,9 @@ function proxyGetBalance(web3, address, callback) {
 }
 
 function proxyCall(web3, contract, address, functionName, args, callback) {
-  if (web3.currentProvider) {
+  try {
     callback(contract[functionName].call.apply(null, args));
-  } else {
+  } catch(err) {
     var web3 = new Web3();
     var data = contract[functionName].getData.apply(null, args);
     var result = undefined;
@@ -95,10 +95,10 @@ function proxyCall(web3, contract, address, functionName, args, callback) {
 }
 
 function proxySend(web3, contract, address, functionName, args, fromAddress, privateKey, nonce, callback) {
-  if (web3.currentProvider) {
+  try {
     web3.eth.defaultAccount = fromAddress;
     callback([contract[functionName].sendTransaction.apply(null, args),0]);
-  } else {
+  } catch(err) {
     if (privateKey && privateKey.substring(0,2)=='0x') {
       privateKey = privateKey.substring(2,privateKey.length);
     }
