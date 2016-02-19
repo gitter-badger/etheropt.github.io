@@ -23,6 +23,11 @@ Main.tooltips = function() {
     $('[data-toggle="tooltip"]').tooltip()
   });
 }
+Main.popovers = function() {
+  $(function () {
+    $('[data-toggle="popover"]').popover()
+  });
+}
 Main.externalLinks = function() {
   $('a[target=_blank]').on('click', function(){
     open(this.href);
@@ -128,6 +133,7 @@ Main.connectionTest = function() {
     connection = {connection: 'Proxy', provider: 'http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io', testnet: config.eth_testnet};
   }
   new EJS({url: config.home_url+'/'+'connection.ejs'}).update('connection', connection);
+  Main.popovers();
   return connection;
 }
 Main.loadAddresses = function() {
