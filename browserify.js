@@ -75,7 +75,7 @@ Main.fund = function(amount) {
 Main.loadAddresses = function() {
   try {
     //if we are connected to geth, no need to have a private key in the "add address" form
-    web3.eth.getBalance(address);
+    web3.eth.getBalance('0x0000000000000000000000000000000000000000');
     console.log('We are connected to geth.');
     $('#pk_div').hide();
   } catch(err) {
