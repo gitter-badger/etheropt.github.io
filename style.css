@@ -3,8 +3,24 @@ body, html {
   margin: 0 auto;
 }
 
+#header {
+  width: 100%;
+  font-size: 2em;
+  height: 80px;
+  padding: 0;
+}
+#header .helper {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+#header img {
+  height: 60px;
+  vertical-align: middle;
+}
+
 #content {
-  padding: 1em;
+  padding-bottom: 1em;
 }
 
 #footer {
