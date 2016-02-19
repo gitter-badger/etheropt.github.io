@@ -81,20 +81,20 @@ Main.loadAddresses = function() {
       });
     },
     function(err, addresses) {
-      new EJS({url: 'addresses.ejs'}).update('addresses', {addresses: addresses, selectedAddr: selectedAddr});
+      new EJS({url: config.home_url+'/'+'addresses.ejs'}).update('addresses', {addresses: addresses, selectedAddr: selectedAddr});
     }
   );
 }
 Main.loadFunds = function() {
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getFunds', [addrs[selectedAddr]], function(result) {
     funds = result.toString();
-    new EJS({url: 'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
   });
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getAvailableFunds', [addrs[selectedAddr]], function(result) {
     fundsAvailable = result.toString();
-    new EJS({url: 'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
   });
-  new EJS({url: 'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+  new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
 }
 Main.loadMarket = function() {
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptionChains', [], function(result) {
@@ -187,7 +187,7 @@ Main.loadMarket = function() {
             });
           },
           function(err, options) {
-            new EJS({url: 'market.ejs'}).update('market', {options: options});
+            new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
             Main.tooltips();
           }
         );
@@ -223,8 +223,8 @@ config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
 config.contract_market_addr = '0x2a4c054d0b185c3bf3a2d29cbe4fbdd3eb1d4d2f';
 config.eth_testnet = true;
-config.eth_provider = 'http://127.0.0.1:8545';
-config.eth_addr = '0x0000000000000000000000000000000000000000';                   
+config.eth_provider = 'http://localhost:8545';
+config.eth_addr = '0x0000000000000000000000000000000000000000';
 config.eth_addr_pk = '';
 
 module.exports = config;

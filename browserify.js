@@ -80,20 +80,20 @@ Main.loadAddresses = function() {
       });
     },
     function(err, addresses) {
-      new EJS({url: 'addresses.ejs'}).update('addresses', {addresses: addresses, selectedAddr: selectedAddr});
+      new EJS({url: config.home_url+'/'+'addresses.ejs'}).update('addresses', {addresses: addresses, selectedAddr: selectedAddr});
     }
   );
 }
 Main.loadFunds = function() {
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getFunds', [addrs[selectedAddr]], function(result) {
     funds = result.toString();
-    new EJS({url: 'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
   });
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getAvailableFunds', [addrs[selectedAddr]], function(result) {
     fundsAvailable = result.toString();
-    new EJS({url: 'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
   });
-  new EJS({url: 'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+  new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
 }
 Main.loadMarket = function() {
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptionChains', [], function(result) {
@@ -186,7 +186,7 @@ Main.loadMarket = function() {
             });
           },
           function(err, options) {
-            new EJS({url: 'market.ejs'}).update('market', {options: options});
+            new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
             Main.tooltips();
           }
         );
