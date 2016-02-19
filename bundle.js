@@ -77,8 +77,10 @@ Main.loadAddresses = function() {
   try {
     //if we are connected to geth, no need to have a private key in the "add address" form
     web3.eth.getBalance(address);
+    console.log('We are connected to geth.');
     $('#pk_div').hide();
   } catch(err) {
+    console.log('We are not connected to geth. We are using the proxy. '+err);
   }
   async.map(addrs,
     function(addr, callback) {
