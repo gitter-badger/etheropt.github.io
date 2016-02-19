@@ -48,6 +48,15 @@ contract Market {
     }
   }
 
+  function withdrawFunds(uint amount) {
+    if (accountIDs[msg.sender]>0) {
+      if (amount<=getAvailableFunds(msg.sender)) {
+        accounts[accountIDs[msg.sender]].capital -= amount;
+        msg.sender.send(amount);
+      }
+    }
+  }
+
   function getFunds(address user) constant returns(uint) {
     if (accountIDs[user]>0) {
       return accounts[accountIDs[user]].capital;

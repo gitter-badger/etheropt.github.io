@@ -72,6 +72,13 @@ Main.fund = function(amount) {
     Main.alertTxHash(txHash);
   });
 }
+Main.withdraw = function(amount) {
+  utility.proxySend(web3, myContract, config.contract_market_addr, 'withdrawFunds', [{gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+    txHash = result[0];
+    nonce = result[1];
+    Main.alertTxHash(txHash);
+  });
+}
 Main.loadAddresses = function() {
   try {
     //if we are connected to geth, no need to have a private key in the "add address" form

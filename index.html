@@ -118,6 +118,38 @@
       </div>
     </div>
 
+    <!-- Withdraw -->
+    <div class="modal fade" id="withdraw_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Withdraw funds</h4>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <input type="text" class="form-control" id="withdraw_amount" placeholder="Amount (eth)" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="withdraw_submit">Withdraw funds</button>
+            <script type="text/javascript">
+            $(function () {
+                $('body').on('click', '#withdraw_submit', function (e) {
+                    e.preventDefault();
+                    $('#withdraw_modal').modal('hide');
+                    bundle.Main.withdraw($('#withdraw_amount').val());
+                });
+            });
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Buy -->
     <div class="modal fade" id="buy_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
       <div class="modal-dialog modal-sm" role="document">
