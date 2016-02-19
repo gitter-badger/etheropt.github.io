@@ -1,0 +1,35 @@
+<% options.sort(function(a,b){ return a.expiration<b.expiration || a.expiration==b.expiration && a.strike<b.strike ? -1 : 1 }); %>
+<% expirations = options.map(function(x){return x.expiration}).getUnique() %>
+<table class="table table-hover">
+  <tr>
+    <th>Expiration/Strike</th>
+    <th>Best bid</th>
+    <th>Best offer</th>
+    <th>My position</th>
+  </tr>
+  <% expirations.forEach(function(expiration) { %>
+    <% expiration_options = options.filter(function(x){return x.expiration==expiration}) %>
+      <tr>
+        <td><strong><%= expiration %></strong></td>
+        <td></td>
+        <td></td>
+        <td>Cash: <%= bundle.utility.weiToEth(expiration_options[0].cash) %> eth</td>
+      </tr>
+      <% expiration_options.forEach(function(option){ %>
+        <tr>
+          <td><%= option.strike %></td>
+          <td>
+            <%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4)+" ("+bundle.utility.weiToEth(option.buy_orders[0].size)+" eth)" : "N/A" %>
+            <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#sell_modal" data-optionchainid="<%= option.optionChainID%>" data-optionid="<%= option.optionID%>" data-price="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4) : "" %>" data-size="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.weiToEth(option.buy_orders[0].size) : "" %>" data-description="<%= option.expiration+" / "+option.strike %>">Sell</button>
+          </td>
+          <td>
+            <%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.roundTo(option.sell_orders[0].price,4)+" ("+bundle.utility.weiToEth(option.sell_orders[0].size)+" eth)" : "N/A" %>
+            <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#buy_modal" data-optionchainid="<%= option.optionChainID%>" data-optionid="<%= option.optionID%>" data-price="<%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.roundTo(option.sell_orders[0].price,4) : "" %>" data-size="<%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.weiToEth(option.sell_orders[0].size) : "" %>" data-description="<%= option.expiration+" / "+option.strike %>">Buy</button>
+          </td>
+          <td>
+            <%= bundle.utility.weiToEth(option.position) %> eth
+          </td>
+        </tr>
+      <% }); %>
+  <% }); %>
+</table>

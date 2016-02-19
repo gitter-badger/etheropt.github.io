@@ -1,0 +1,243 @@
+<script>
+//window size
+try {
+  var gui = require('nw.gui');
+  var win = gui.Window.get();
+  win.width = 800;
+  win.height = 600;
+} catch (err) {
+}
+</script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link href="http://getbootstrap.com/assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>    <!-- Custom js for this template  -->
+    <script src="ejs_production.js"></script>
+    <script src="bundle.js"></script>
+    <title>Etheropt</title>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <div class="navbar-brand">
+            <img src="logo.svg" />
+          </div>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <div id="funds"></div>
+          <div id="addresses"></div>
+        </div>
+      </div>
+    </nav>
+
+    <div id="content">
+      <div id="alerts"></div>
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <p>Etheropt is a decentralized options exchange built on <a href="https://ethereum.org/" target="_blank">Ethereum</a>. The options you see here are <a href="https://en.wikipedia.org/wiki/Binary_option" target="_blank">binary call options</a> on the price of Ethereum in USD as reported by <a href="https://poloniex.com/exchange#btc_eth" target="_blank">Poloniex</a> and <a href="http://www.coindesk.com/price/" target="_blank">Coindesk</a> and verified by <a href="https://www.realitykeys.com/" target="_blank">Reality Keys</a>. Etheropt has no owner. Its entire operation is described and executed by an Ethereum <a href="https://www.ethereum.org/greeter" target="_blank">smart contract</a>.</p>
+        </div>
+      </div>
+      <div id="market">
+        <i class="fa fa-circle-o-notch fa-spin fa-3x"></i>
+      </div>
+    </div>
+
+    <div id="footer">
+      Etheropt is open source on <a href="https://github.com/frenchhoudini/etheropt" target="_blank">GitHub</a>. Documentation can be found in the <a href="https://github.com/frenchhoudini/etheropt" target="_blank">Manual</a>.
+    </div>
+
+    <!-- Address -->
+    <div class="modal fade" id="address_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Add address</h4>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <label for="address_addr">Address</label>
+                <input type="text" class="form-control" id="address_addr" placeholder="Address (0x.....)" />
+              </div>
+              <div id="pk_div">
+                <div class="form-group">
+                  <label for="address_addr">Private key</label>
+                  <input type="text" class="form-control" id="address_pk" placeholder="Private key (0x.....)" />
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="address_submit">Add address</button>
+            <script>
+            $(function () {
+                $('body').on('click', '#address_submit', function (e) {
+                    e.preventDefault();
+                    $('#address_modal').modal('hide');
+                    bundle.Main.addAddress($('#address_addr').val(), $('#address_pk').val());
+                });
+                if (typeof(web3)!=='undefined' && web3.currentProvider) {
+                  $('#pk_div').hide();
+                }
+            });
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fund -->
+    <div class="modal fade" id="fund_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Add funds</h4>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <input type="text" class="form-control" id="fund_amount" placeholder="Amount (eth)" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="fund_submit">Add funds</button>
+            <script>
+            $(function () {
+                $('body').on('click', '#fund_submit', function (e) {
+                    e.preventDefault();
+                    $('#fund_modal').modal('hide');
+                    bundle.Main.fund($('#fund_amount').val());
+                });
+            });
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buy -->
+    <div class="modal fade" id="buy_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Buy</h4>
+          </div>
+          <div class="modal-body">
+            <form>
+              <input type="hidden" id="buy_optionChainID" value="">
+              <input type="hidden" id="buy_optionID" value="">
+              <div class="form-group">
+                <label>Option</label>
+                <div id="buy_description"></div>
+              </div>
+              <div class="form-group">
+                <label for="buy_size">Size</label>
+                <input type="text" class="form-control" id="buy_size" placeholder="Size (eth)" />
+              </div>
+              <div class="form-group">
+                <label for="buy_price">Price</label>
+                <input type="text" class="form-control" id="buy_price" placeholder="Price (0.xxxx)" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="buy_submit">Buy</button>
+            <script>
+            $(function () {
+                $('body').on('click', '#buy_submit', function (e) {
+                    e.preventDefault();
+                    $('#buy_modal').modal('hide');
+                    bundle.Main.buy($('#buy_optionChainID').val(), $('#buy_optionID').val(), $('#buy_price').val(), $('#buy_size').val());
+                });
+                $('#buy_modal').on('show.bs.modal', function(e) {
+                    var optionChainID = $(e.relatedTarget).data('optionchainid');
+                    $(e.currentTarget).find('input[id="buy_optionChainID"]').val(optionChainID);
+                    var optionID = $(e.relatedTarget).data('optionid');
+                    $(e.currentTarget).find('input[id="buy_optionID"]').val(optionID);
+                    var price = $(e.relatedTarget).data('price');
+                    $(e.currentTarget).find('input[id="buy_price"]').val(price);
+                    var size = $(e.relatedTarget).data('size');
+                    $(e.currentTarget).find('input[id="buy_size"]').val(size);
+                    var description = $(e.relatedTarget).data('description');
+                    $(e.currentTarget).find('#buy_description').html(description);
+                });
+            });
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sell -->
+    <div class="modal fade" id="sell_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Sell</h4>
+          </div>
+          <div class="modal-body">
+            <form>
+              <input type="hidden" id="sell_optionChainID" value="">
+              <input type="hidden" id="sell_optionID" value="">
+              <div class="form-group">
+                <label>Option</label>
+                <div id="sell_description"></div>
+              </div>
+              <div class="form-group">
+                <label for="sell_size">Size</label>
+                <input type="text" class="form-control" id="sell_size" placeholder="Size (eth)" />
+              </div>
+              <div class="form-group">
+                <label for="sell_price">Price</label>
+                <input type="text" class="form-control" id="sell_price" placeholder="Price (0.xxxx)" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="sell_submit">Sell</button>
+            <script>
+            $(function () {
+                $('body').on('click', '#sell_submit', function (e) {
+                    e.preventDefault();
+                    $('#sell_modal').modal('hide');
+                    bundle.Main.sell($('#sell_optionChainID').val(), $('#sell_optionID').val(), $('#sell_price').val(), $('#sell_size').val());
+                });
+                $('#sell_modal').on('show.bs.modal', function(e) {
+                    var optionChainID = $(e.relatedTarget).data('optionchainid');
+                    $(e.currentTarget).find('input[id="sell_optionChainID"]').val(optionChainID);
+                    var optionID = $(e.relatedTarget).data('optionid');
+                    $(e.currentTarget).find('input[id="sell_optionID"]').val(optionID);
+                    var price = $(e.relatedTarget).data('price');
+                    $(e.currentTarget).find('input[id="sell_price"]').val(price);
+                    var size = $(e.relatedTarget).data('size');
+                    $(e.currentTarget).find('input[id="sell_size"]').val(size);
+                    var description = $(e.relatedTarget).data('description');
+                    $(e.currentTarget).find('#sell_description').html(description);
+                });
+            });
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+body, html {
+  width: 800px;
+  margin: 0 auto;
+}
+
+#content {
+  padding: 1em;
+}
+
+#footer {
+  background: #eee;
+  padding: 1em;
+  border-top: 1px solid #ccc;
+}
+
+.navbar-brand {
+  padding: 5px;
+}
+.navbar-brand img {
+  height: 100%;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Etheropt",
+  "version": "1.0.0",
+  "description": "Decentralized options exchange built on Ethereum",
+  "main": "index.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frenchhoudini/etheropt.git"
+  },
+  "author": "frenchhoudini",
+  "license": "MIT",
+  "homepage": "https://github.com/frenchhoudini/etheropt",
+  "dependencies": {
+    "web3": "^0.15.2",
+    "request": "^2.69.0",
+    "async": "^1.5.2",
+    "datejs": "^1.0.0-rc3",
+    "open": "^0.0.5",
+    "xmlhttprequest": "^1.8.0",
+    "Base64": "^0.3.0",
+    "fs": "^0.0.2",
+    "ethereumjs-tx": "^1.0.0"
+  },
+  "width": 800,
+  "height": 600
+}
