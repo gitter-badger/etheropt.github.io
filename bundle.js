@@ -133,7 +133,7 @@ Main.connectionTest = function() {
   } catch(err) {
     connection = {connection: 'Proxy', provider: 'http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io', testnet: config.eth_testnet};
   }
-  new EJS({url: config.home_url+'/'+'connection.ejs'}).update('connection', {cconnection: onnection});
+  new EJS({url: config.home_url+'/'+'connection.ejs'}).update('connection', {connection: connection});
   Main.popovers();
   return connection;
 }
