@@ -7,6 +7,13 @@
     <th>Best offer</th>
     <th>My position</th>
   </tr>
+  <tr>
+    <td colspan="3">
+    </td>
+    <td>
+      <button type="button" class="btn btn-default" onclick="bundle.Main.cancelOrders()">Cancel all my orders</button>
+    </td>
+  </tr>
   <% expiration_pairs.forEach(function(expiration_pair) { %>
     <% filtered_options = options.filter(function(x){return x.expiration+" "+x.fromcur+"/"+x.tocur==expiration_pair}) %>
       <tr>

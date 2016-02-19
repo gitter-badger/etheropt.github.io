@@ -52,6 +52,7 @@ contract Market {
     if (accountIDs[msg.sender]>0) {
       if (int(amount)<=getAvailableFunds(msg.sender)) {
         accounts[accountIDs[msg.sender]].capital -= int(amount);
+        cancelOrders();
         msg.sender.send(amount);
       }
     }
@@ -132,26 +133,28 @@ contract Market {
     if (size % 10000 != 0) {
       size -= size % 10000;
     }
-    bool foundMatch = true;
-    while (foundMatch && size>0) {
-      int256 bestPriceID = -1;
-      for (uint256 i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
-        if (optionChains[optionChainID].options[optionID].sellOrders[i].price<=price && optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && (bestPriceID<0 || optionChains[optionChainID].options[optionID].sellOrders[i].price<optionChains[optionChainID].options[optionID].sellOrders[uint(bestPriceID)].price)) {
-          bestPriceID = int(i);
+    if (max(price * size / 10000,(10000-price) * size / 10000)<=uint(getAvailableFunds(msg.sender))) {
+      bool foundMatch = true;
+      while (foundMatch && size>0) {
+        int256 bestPriceID = -1;
+        for (uint256 i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
+          if (optionChains[optionChainID].options[optionID].sellOrders[i].price<=price && optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && (bestPriceID<0 || optionChains[optionChainID].options[optionID].sellOrders[i].price<optionChains[optionChainID].options[optionID].sellOrders[uint(bestPriceID)].price)) {
+            bestPriceID = int(i);
+          }
+        }
+        if (bestPriceID<0) {
+          foundMatch = false;
+        } else {
+          size = orderMatchBuy(optionChainID, optionID, price, size, uint(bestPriceID));
         }
       }
-      if (bestPriceID<0) {
-        foundMatch = false;
-      } else {
-        size = orderMatchBuy(optionChainID, optionID, price, size, uint(bestPriceID));
+      if (size>0) {
+        uint orderID = optionChains[optionChainID].options[optionID].numBuyOrders++;
+        Order order = optionChains[optionChainID].options[optionID].buyOrders[orderID];
+        order.price = price;
+        order.size = size;
+        order.user = msg.sender;
       }
-    }
-    if (size>0) {
-      uint orderID = optionChains[optionChainID].options[optionID].numBuyOrders++;
-      Order order = optionChains[optionChainID].options[optionID].buyOrders[orderID];
-      order.price = price;
-      order.size = size;
-      order.user = msg.sender;
     }
   }
 
@@ -159,51 +162,61 @@ contract Market {
     if (size % 10000 != 0) {
       size -= size % 10000;
     }
-    bool foundMatch = true;
-    while (foundMatch && size>0) {
-      int256 bestPriceID = -1;
-      for (uint256 i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
-        if (optionChains[optionChainID].options[optionID].buyOrders[i].price>=price && optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && (bestPriceID<0 || optionChains[optionChainID].options[optionID].buyOrders[i].price>optionChains[optionChainID].options[optionID].buyOrders[uint(bestPriceID)].price)) {
-          bestPriceID = int(i);
+    if (max(price * size / 10000,(10000-price) * size / 10000)<=uint(getAvailableFunds(msg.sender))) {
+      bool foundMatch = true;
+      while (foundMatch && size>0) {
+        int256 bestPriceID = -1;
+        for (uint256 i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
+          if (optionChains[optionChainID].options[optionID].buyOrders[i].price>=price && optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && (bestPriceID<0 || optionChains[optionChainID].options[optionID].buyOrders[i].price>optionChains[optionChainID].options[optionID].buyOrders[uint(bestPriceID)].price)) {
+            bestPriceID = int(i);
+          }
+        }
+        if (bestPriceID<0) {
+          foundMatch = false;
+        } else {
+          size = orderMatchSell(optionChainID, optionID, price, size, uint(bestPriceID));
         }
       }
-      if (bestPriceID<0) {
-        foundMatch = false;
-      } else {
-        size = orderMatchSell(optionChainID, optionID, price, size, uint(bestPriceID));
+      if (size>0) {
+        uint orderID = optionChains[optionChainID].options[optionID].numSellOrders++;
+        Order order = optionChains[optionChainID].options[optionID].sellOrders[orderID];
+        order.price = price;
+        order.size = size;
+        order.user = msg.sender;
       }
-    }
-    if (size>0) {
-      uint orderID = optionChains[optionChainID].options[optionID].numSellOrders++;
-      Order order = optionChains[optionChainID].options[optionID].sellOrders[orderID];
-      order.price = price;
-      order.size = size;
-      order.user = msg.sender;
     }
   }
 
   function orderMatchBuy(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint) {
     uint sizeChange = min(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size, size);
-    if (getFunds(msg.sender)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0 && getFunds(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0) {
-      size -= sizeChange;
-      optionChains[optionChainID].positions[msg.sender].positions[optionID] += int(sizeChange);
-      optionChains[optionChainID].positions[msg.sender].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000);
-      optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size -= sizeChange;
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].positions[optionID] -= int(sizeChange);
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].cash += int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000);
+    if (getFunds(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0) {
+      if (getFunds(msg.sender)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0) {
+        size -= sizeChange;
+        optionChains[optionChainID].positions[msg.sender].positions[optionID] += int(sizeChange);
+        optionChains[optionChainID].positions[msg.sender].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000);
+        optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size -= sizeChange;
+        optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].positions[optionID] -= int(sizeChange);
+        optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].cash += int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000);
+      }
+    } else {
+      optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size = 0;
     }
     return size;
   }
 
   function orderMatchSell(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint) {
     uint sizeChange = min(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size, size);
-    if (getFunds(msg.sender)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0 && getFunds(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0) {
-      size -= sizeChange;
-      optionChains[optionChainID].positions[msg.sender].positions[optionID] -= int(sizeChange);
-      optionChains[optionChainID].positions[msg.sender].cash += int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000);
-      optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size -= sizeChange;
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].positions[optionID] += int(sizeChange);
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000);
+    if (getFunds(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0) {
+      if (getFunds(msg.sender)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0) {
+        size -= sizeChange;
+        optionChains[optionChainID].positions[msg.sender].positions[optionID] -= int(sizeChange);
+        optionChains[optionChainID].positions[msg.sender].cash += int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000);
+        optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size -= sizeChange;
+        optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].positions[optionID] += int(sizeChange);
+        optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000);
+      }
+    } else {
+      optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size = 0;
     }
     return size;
   }

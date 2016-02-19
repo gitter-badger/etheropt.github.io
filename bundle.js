@@ -74,7 +74,15 @@ Main.fund = function(amount) {
   });
 }
 Main.withdraw = function(amount) {
-  utility.proxySend(web3, myContract, config.contract_market_addr, 'withdrawFunds', [{gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+  amount = utility.ethToWei(amount);
+  utility.proxySend(web3, myContract, config.contract_market_addr, 'withdrawFunds', [amount, {gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+    txHash = result[0];
+    nonce = result[1];
+    Main.alertTxHash(txHash);
+  });
+}
+Main.cancelOrders = function() {
+  utility.proxySend(web3, myContract, config.contract_market_addr, 'cancelOrders', [{gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
     txHash = result[0];
     nonce = result[1];
     Main.alertTxHash(txHash);
@@ -237,7 +245,7 @@ var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
-config.contract_market_addr = '0x083f3ce943ae050b9dd60ee5bdf91ed5e18f7869';
+config.contract_market_addr = '0x583eb72043ad21bc84f5a4700524cc0f6721985e';
 config.eth_testnet = true;
 config.eth_provider = 'http://localhost:8545';
 config.eth_addr = '0x0000000000000000000000000000000000000000';
