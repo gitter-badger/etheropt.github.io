@@ -73,7 +73,7 @@ Main.logout = function() {
   addrs = [config.eth_addr];
   pks = [config.eth_addr_pk];
   selectedAddr = 0;
-  refresh();
+  Main.refresh();
 }
 Main.buy = function(optionChainID, optionID, price, size) {
   size = utility.ethToWei(size);
