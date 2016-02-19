@@ -6,21 +6,6 @@ var request = _dereq_('request');
 var open = _dereq_("open");
 var async = (typeof(window) === 'undefined') ? _dereq_('async') : _dereq_('async/dist/async.min.js');
 
-//globals
-var addrs = [config.eth_addr];
-var pks = [config.eth_addr_pk];
-var selectedAddr = 0;
-var cookie = readCookie("user");
-if (cookie) {
-  cookie = JSON.parse(cookie);
-  addrs = cookie["addrs"];
-  pks = cookie["pks"];
-  selectedAddr = cookie["selectedAddr"];
-}
-var nonce = undefined;
-var funds = 0;
-var fundsAvailable = 0;
-
 function Main() {
 }
 //functions
@@ -273,12 +258,26 @@ Main.loadMarket = function() {
   });
 }
 Main.refresh = function() {
-  Main.setCookie("user", JSON.stringify({"addrs": addrs, "pks": pks, "selectedAddr": selectedAddr}), 999);
+  Main.createCookie("user", JSON.stringify({"addrs": addrs, "pks": pks, "selectedAddr": selectedAddr}), 999);
   Main.connectionTest();
   Main.loadMarket();
   Main.loadAddresses();
   Main.loadFunds();
 }
+//globals
+var addrs = [config.eth_addr];
+var pks = [config.eth_addr_pk];
+var selectedAddr = 0;
+var cookie = Main.readCookie("user");
+if (cookie) {
+  cookie = JSON.parse(cookie);
+  addrs = cookie["addrs"];
+  pks = cookie["pks"];
+  selectedAddr = cookie["selectedAddr"];
+}
+var nonce = undefined;
+var funds = 0;
+var fundsAvailable = 0;
 //web3
 var web3 = new Web3();
 web3.setProvider(new web3.providers.HttpProvider(config.eth_provider));
