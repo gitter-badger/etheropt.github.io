@@ -31,7 +31,7 @@ contract Market {
   uint numOptionChains;
   struct Account {
     address user;
-    uint capital;
+    int capital;
   }
   mapping(uint => Account) accounts;
   uint numAccounts;
@@ -39,25 +39,25 @@ contract Market {
 
   function addFunds() {
     if (accountIDs[msg.sender]>0) {
-      accounts[accountIDs[msg.sender]].capital += msg.value;
+      accounts[accountIDs[msg.sender]].capital += int(msg.value);
     } else {
       uint accountID = ++numAccounts;
       accounts[accountID].user = msg.sender;
-      accounts[accountID].capital += msg.value;
+      accounts[accountID].capital += int(msg.value);
       accountIDs[msg.sender] = accountID;
     }
   }
 
   function withdrawFunds(uint amount) {
     if (accountIDs[msg.sender]>0) {
-      if (amount<=getAvailableFunds(msg.sender)) {
-        accounts[accountIDs[msg.sender]].capital -= amount;
+      if (int(amount)<=getAvailableFunds(msg.sender)) {
+        accounts[accountIDs[msg.sender]].capital -= int(amount);
         msg.sender.send(amount);
       }
     }
   }
 
-  function getFunds(address user) constant returns(uint) {
+  function getFunds(address user) constant returns(int) {
     if (accountIDs[user]>0) {
       return accounts[accountIDs[user]].capital;
     } else {
@@ -65,9 +65,9 @@ contract Market {
     }
   }
 
-  function getAvailableFunds(address user) constant returns(uint) {
+  function getAvailableFunds(address user) constant returns(int) {
     if (accountIDs[user]>0) {
-      return accounts[accountIDs[user]].capital - getMaxLoss(user);
+      return accounts[accountIDs[user]].capital + getMaxLoss(user);
     } else {
       return 0;
     }
@@ -89,7 +89,7 @@ contract Market {
           for (uint j=0; j<optionChains[optionChainID].numOptions; j++) {
             result += (int(value[j]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[j]);
           }
-          accounts[accountID].capital = uint(int(accounts[accountID].capital) + result);
+          accounts[accountID].capital = accounts[accountID].capital + result;
         }
       }
       optionChains[optionChainID].expired = true;
@@ -184,7 +184,7 @@ contract Market {
 
   function orderMatchBuy(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint) {
     uint sizeChange = min(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size, size);
-    if (getFunds(msg.sender)-getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0 && getFunds(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user)-getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0) {
+    if (getFunds(msg.sender)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0 && getFunds(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000))>0) {
       size -= sizeChange;
       optionChains[optionChainID].positions[msg.sender].positions[optionID] += int(sizeChange);
       optionChains[optionChainID].positions[msg.sender].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price / 10000);
@@ -197,7 +197,7 @@ contract Market {
 
   function orderMatchSell(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint) {
     uint sizeChange = min(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size, size);
-    if (getFunds(msg.sender)-getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0 && getFunds(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user)-getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0) {
+    if (getFunds(msg.sender)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(-sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0 && getFunds(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user, optionChainID, optionID, int(sizeChange), int(-sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000))>0) {
       size -= sizeChange;
       optionChains[optionChainID].positions[msg.sender].positions[optionID] -= int(sizeChange);
       optionChains[optionChainID].positions[msg.sender].cash += int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price / 10000);
@@ -294,8 +294,8 @@ contract Market {
     }
   }
 
-  function getMaxLossAfterTrade(address user, uint optionChainID, uint optionID, int positionChange, int cashChange) constant returns(uint) {
-    uint totalMaxLoss = 0;
+  function getMaxLossAfterTrade(address user, uint optionChainID, uint optionID, int positionChange, int cashChange) constant returns(int) {
+    int totalMaxLoss = 0;
     for (uint i=0; i<numOptionChains; i++) {
       if (optionChains[i].expired == false) {
         int maxLoss = 0;
@@ -312,17 +312,17 @@ contract Market {
             pnl += positionChange;
           }
           if (pnl<maxLoss) {
-            maxLoss = -pnl;
+            maxLoss = pnl;
           }
         }
-        totalMaxLoss += uint(-maxLoss);
+        totalMaxLoss += maxLoss;
       }
     }
     return totalMaxLoss;
   }
 
-  function getMaxLoss(address user) constant returns(uint) {
-    uint totalMaxLoss = 0;
+  function getMaxLoss(address user) constant returns(int) {
+    int totalMaxLoss = 0;
     for (uint i=0; i<numOptionChains; i++) {
       if (optionChains[i].expired == false) {
         int maxLoss = 0;
@@ -336,7 +336,7 @@ contract Market {
             maxLoss = pnl;
           }
         }
-        totalMaxLoss += uint(-maxLoss);
+        totalMaxLoss += maxLoss;
       }
     }
     return totalMaxLoss;
