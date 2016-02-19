@@ -21,7 +21,7 @@ Main.alertInfo = function(message) {
   Main.externalLinks();
 }
 Main.alertTxHash = function(txHash) {
-  Main.alertInfo('You just created an Ethereum transaction. Track its progress here: <a href="http://'+(config.testnet ? 'testnet' : 'api')+'.etherscan.io/tx/'+txHash+'" target="_blank">'+txHash+'</a>.');
+  Main.alertInfo('You just created an Ethereum transaction. Track its progress here: <a href="http://'+(config.eth_testnet ? 'testnet' : 'api')+'.etherscan.io/tx/'+txHash+'" target="_blank">'+txHash+'</a>.');
 }
 Main.tooltip = function(message) {
   return '<a href="#" data-toggle="tooltip" data-placement="bottom" title="'+message+'"><i class="fa fa-question-circle fa-lg"></i></a>';

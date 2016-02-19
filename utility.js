@@ -65,7 +65,7 @@ function proxyGetBalance(web3, address, callback) {
   try {
     callback(web3.eth.getBalance(address));
   } catch(err) {
-    var url = 'http://'+(config.testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=account&action=balance&address='+address+'&tag=latest';
+    var url = 'http://'+(config.eth_testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=account&action=balance&address='+address+'&tag=latest';
     request.get(url, function(err, httpResponse, body){
       if (!err) {
         result = JSON.parse(body);
@@ -82,7 +82,7 @@ function proxyCall(web3, contract, address, functionName, args, callback) {
     var web3 = new Web3();
     var data = contract[functionName].getData.apply(null, args);
     var result = undefined;
-    var url = 'http://'+(config.testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=proxy&action=eth_call&to='+address+'&data='+data;
+    var url = 'http://'+(config.eth_testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=proxy&action=eth_call&to='+address+'&data='+data;
     request.get(url, function(err, httpResponse, body){
       if (!err) {
         result = JSON.parse(body);
@@ -116,7 +116,7 @@ function proxySend(web3, contract, address, functionName, args, fromAddress, pri
         options = args[args.length - 1];
     }
     if (nonce==undefined) {
-      var url = 'http://'+(config.testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=account&action=txlist&address='+fromAddress+'&sort=desc';
+      var url = 'http://'+(config.eth_testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=account&action=txlist&address='+fromAddress+'&sort=desc';
       request.get(url, function(err, httpResponse, body){
         if (!err) {
           var result = JSON.parse(body);
@@ -149,7 +149,7 @@ function proxySend(web3, contract, address, functionName, args, fromAddress, pri
           tx.sign(new Buffer(privateKey, 'hex'));
           var serializedTx = tx.serialize().toString('hex');
           var result = undefined;
-          var url = 'http://'+(config.testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=proxy&action=eth_sendRawTransaction&hex='+serializedTx;
+          var url = 'http://'+(config.eth_testnet ? 'testnet' : 'api')+'.etherscan.io/api?module=proxy&action=eth_sendRawTransaction&hex='+serializedTx;
           request.get(url, function(err, httpResponse, body){
             if (!err) {
               result = JSON.parse(body);
