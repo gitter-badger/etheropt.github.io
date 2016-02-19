@@ -133,7 +133,7 @@ contract Market {
     if (size % 10000 != 0) {
       size -= size % 10000;
     }
-    if (max(price * size / 10000,(10000-price) * size / 10000)<=uint(getAvailableFunds(msg.sender))) {
+    if (int(max(price * size / 10000,(10000-price) * size / 10000))<=getAvailableFunds(msg.sender)) {
       bool foundMatch = true;
       while (foundMatch && size>0) {
         int256 bestPriceID = -1;
@@ -162,7 +162,7 @@ contract Market {
     if (size % 10000 != 0) {
       size -= size % 10000;
     }
-    if (max(price * size / 10000,(10000-price) * size / 10000)<=uint(getAvailableFunds(msg.sender))) {
+    if (int(max(price * size / 10000,(10000-price) * size / 10000))<=getAvailableFunds(msg.sender)) {
       bool foundMatch = true;
       while (foundMatch && size>0) {
         int256 bestPriceID = -1;
