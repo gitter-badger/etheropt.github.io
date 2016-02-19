@@ -29,6 +29,10 @@ body, html {
   border-top: 1px solid #ccc;
 }
 
+#connection {
+  float: right;
+}
+
 .navbar-brand {
   padding: 5px;
 }
