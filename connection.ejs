@@ -1,1 +1,6 @@
 <button type="button" class="btn btn-default btn-info" data-toggle="popover" title="Connection" data-content="Connection: <%= connection.connection %> (<%= connection.provider %>) <%= connection.testnet ? '(Testnet)' : ''%>">Connection</button>
+<script type="text/javascript">
+$(function () {
+  $('[data-toggle="popover"]').popover()
+});
+</script>
