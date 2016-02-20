@@ -74,9 +74,27 @@ contract Market {
     }
   }
 
-  function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) {
+  function expireTest(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) constant returns(bytes32[], address[], bool) {
+    bytes32[] memory hashes = new bytes32[](3);
+    address[] memory ethAddrs = new address[](3);
+    bool allSigned = true;
     if (optionChains[optionChainID].expired == false) {
-      bool allSigned = true;
+      for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
+        var hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
+        var signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);
+        hashes[optionID] = hash;
+        ethAddrs[optionID] = signerAddress;
+        if (signerAddress != optionChains[optionChainID].options[optionID].ethAddr) {
+          allSigned = false;
+        }
+      }
+    }
+    return (hashes, ethAddrs, allSigned);
+  }
+
+  function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) {
+    bool allSigned = true;
+    if (optionChains[optionChainID].expired == false) {
       for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
         var hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
         var signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);

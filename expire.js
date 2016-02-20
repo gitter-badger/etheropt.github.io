@@ -87,7 +87,7 @@ if (cli_options.help) {
                 console.log("Should expire",relatedOptions[0].expiration,relatedOptions[0].winner_value);
                 if (cli_options.armed) {
                   console.log("Expiring");
-                  utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [optionChainID, v, '0x'+r, '0x'+s, value, {gas: 1000000, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
+                  utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [optionChainID, v, r, s, value, {gas: 1000000, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
                     txHash = result[0];
                     nonce = result[1];
                   });
