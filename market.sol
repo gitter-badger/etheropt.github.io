@@ -41,7 +41,7 @@ contract Market {
     if (accountIDs[msg.sender]>0) {
       accounts[accountIDs[msg.sender]].capital += int(msg.value);
     } else {
-      uint accountID = ++numAccounts;
+      uint accountID = numAccounts++;
       accounts[accountID].user = msg.sender;
       accounts[accountID].capital += int(msg.value);
       accountIDs[msg.sender] = accountID;
@@ -96,7 +96,7 @@ contract Market {
         }
       }
     }
-    return -1;
+    return int(numAccounts);
   }
 
   function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) {
