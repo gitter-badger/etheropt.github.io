@@ -35,13 +35,13 @@ contract Market {
   }
   mapping(uint => Account) accounts;
   uint numAccounts;
-  mapping(address => uint) accountIDs;
+  mapping(address => uint) accountIDs; //starts at 1
 
   function addFunds() {
     if (accountIDs[msg.sender]>0) {
       accounts[accountIDs[msg.sender]].capital += int(msg.value);
     } else {
-      uint accountID = numAccounts++;
+      uint accountID = ++numAccounts;
       accounts[accountID].user = msg.sender;
       accounts[accountID].capital += int(msg.value);
       accountIDs[msg.sender] = accountID;
@@ -86,7 +86,7 @@ contract Market {
       }
     }
     if (allSigned) {
-      for (uint accountID=0; accountID<numAccounts; accountID++) {
+      for (uint accountID=1; accountID<=numAccounts; accountID++) {
         int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
         for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
           result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
@@ -110,7 +110,7 @@ contract Market {
         }
       }
       if (allSigned) {
-        for (uint accountID=0; accountID<numAccounts; accountID++) {
+        for (uint accountID=1; accountID<=numAccounts; accountID++) {
           int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
           for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
             result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
