@@ -74,22 +74,29 @@ contract Market {
     }
   }
 
-  function expireTest(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) constant returns(bytes32[], address[], bool) {
-    bytes32[] memory hashes = new bytes32[](3);
-    address[] memory ethAddrs = new address[](3);
+  function expireTest(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value, address user) constant returns(int) {
     bool allSigned = true;
     if (optionChains[optionChainID].expired == false) {
       for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
         var hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
         var signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);
-        hashes[optionID] = hash;
-        ethAddrs[optionID] = signerAddress;
         if (signerAddress != optionChains[optionChainID].options[optionID].ethAddr) {
           allSigned = false;
         }
       }
     }
-    return (hashes, ethAddrs, allSigned);
+    if (allSigned) {
+      for (uint accountID=0; accountID<numAccounts; accountID++) {
+        int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
+        for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
+          result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
+        }
+        if (user == accounts[accountID].user) {
+          return result;
+        }
+      }
+    }
+    return -1;
   }
 
   function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) {
