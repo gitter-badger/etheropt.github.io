@@ -78,7 +78,7 @@ contract Market {
     if (optionChains[optionChainID].expired == false) {
       bool allSigned = true;
       for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-        var hash = sha256(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
+        var hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
         var signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);
         if (signerAddress != optionChains[optionChainID].options[optionID].ethAddr) {
           allSigned = false;
@@ -87,8 +87,8 @@ contract Market {
       if (allSigned) {
         for (uint accountID=0; accountID<numAccounts; accountID++) {
           int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
-          for (uint i=0; i<optionChains[optionChainID].numOptions; i++) {
-            result += (int(value[i]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[i]);
+          for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
+            result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
           }
           accounts[accountID].capital = accounts[accountID].capital + result;
         }
