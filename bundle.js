@@ -159,13 +159,19 @@ Main.loadMarket = function() {
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptionChains', [], function(result) {
     var numOptionChains = parseInt(result.toString());
     var optionChainIDs = [];
-    for (var optionChainID = Math.max(0,numOptionChains-2); optionChainID<numOptionChains; optionChainID++) {
+    for (var optionChainID = Math.max(0,numOptionChains-5); optionChainID<numOptionChains; optionChainID++) {
       optionChainIDs.push(optionChainID);
     }
     async.map(optionChainIDs,
       function(optionChainID, callback_map) {
-        utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptions', [optionChainID], function(result) {
-          callback_map(null, {optionChainID: optionChainID, numOptions: result.toString()});
+        utility.proxyCall(web3, myContract, config.contract_market_addr, 'isExpired', [optionChainID], function(result) {
+          if (result == false) {
+            utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptions', [optionChainID], function(result) {
+              callback_map(null, {optionChainID: optionChainID, numOptions: result.toString()});
+            });
+          } else {
+            callback_map(null, {optionChainID: optionChainID, numOptions: 0});
+          }
         });
       },
       function(err, results){
@@ -297,7 +303,7 @@ var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
-config.contract_market_addr = '0xbd0c0f50364acf6892df54870ee67ffb63c97ef0';
+config.contract_market_addr = '0x9e920e5ef6182f994a458a4d6fcc0c04ab7fc295';
 config.eth_testnet = true;
 config.eth_provider = 'http://localhost:8545';
 config.eth_addr = '0x0000000000000000000000000000000000000000';

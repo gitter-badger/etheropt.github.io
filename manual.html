@@ -65,6 +65,8 @@
           <p>This function expires the specified option chain if all the provided signatures and values are valid.</p>
         <h2>addOptionChain(uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
           <p>This function can only be run by the administrator. It adds an option chain, which consists of a collection of strikes and their associated Reality Key IDs and hashes.</p>
+        <h2>isExpired(uint optionChainID) constant returns(bool)</h2>
+          <p>This function returns a boolean representing whether the given option chain has been expired.</p>
         <h2>getNumOptionChains() constant returns(uint)</h2>
           <p>This function returns the number of option chains.</p>
         <h2>getNumOptions(uint optionChainID) constant returns(uint)</h2>

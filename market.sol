@@ -113,6 +113,9 @@ contract Market {
     }
   }
 
+  function isExpired(uint optionChainID) constant returns(bool) {
+    return optionChains[optionChainID].expired;
+  }
   function getNumOptionChains() constant returns(uint) {
     return numOptionChains;
   }
