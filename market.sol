@@ -74,31 +74,6 @@ contract Market {
     }
   }
 
-  function expireTest(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value, address user) constant returns(int) {
-    bool allSigned = true;
-    if (optionChains[optionChainID].expired == false) {
-      for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-        var hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
-        var signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);
-        if (signerAddress != optionChains[optionChainID].options[optionID].ethAddr) {
-          allSigned = false;
-        }
-      }
-    }
-    if (allSigned) {
-      for (uint accountID=1; accountID<=numAccounts; accountID++) {
-        int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
-        for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-          result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
-        }
-        if (user == accounts[accountID].user) {
-          return result;
-        }
-      }
-    }
-    return int(numAccounts);
-  }
-
   function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) {
     bool allSigned = true;
     if (optionChains[optionChainID].expired == false) {
