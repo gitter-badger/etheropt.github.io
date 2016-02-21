@@ -80,14 +80,14 @@ if (cli_options.help) {
               var relatedOptions = options.filter(function(x){return x.optionChainID==optionChainID});
               if (relatedOptions.filter(function(x){return !x.sig_r || !x.sig_s || !x.sig_v || !x.signed_value}).length==0) {
                 relatedOptions.sort(function(a,b){return a.optionID>b.optionID ? 1 : -1});
+                console.log(relatedOptions);
                 var v = relatedOptions.map(function(x){return x.sig_v});
                 var r = relatedOptions.map(function(x){return '0x'+x.sig_r});
                 var s = relatedOptions.map(function(x){return '0x'+x.sig_s});
                 var value = relatedOptions.map(function(x){return x.signed_value});
-                console.log("Should expire",relatedOptions[0].expiration,relatedOptions[0].winner_value);
                 if (cli_options.armed) {
                   console.log("Expiring");
-                  utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [optionChainID, v, r, s, value, {gas: 1000000, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
+                  utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [optionChainID, v, r, s, value, {gas: 3141592, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
                     txHash = result[0];
                     nonce = result[1];
                   });
