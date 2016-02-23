@@ -147,7 +147,7 @@ Main.loadAddresses = function() {
 Main.loadFunds = function() {
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getFundsAndAvailable', [addrs[selectedAddr]], function(result) {
     funds = result[0].toString();
-    availableFunds = result[1].toString();
+    fundsAvailable = result[1].toString();
     new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
   });
 }
