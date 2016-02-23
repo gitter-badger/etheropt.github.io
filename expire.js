@@ -80,7 +80,7 @@ if (cli_options.help) {
               var relatedOptions = options.filter(function(x){return x.optionChainID==optionChainID});
               if (relatedOptions.filter(function(x){return !x.sig_r || !x.sig_s || !x.sig_v || !x.signed_value}).length==0) {
                 relatedOptions.sort(function(a,b){return a.optionID>b.optionID ? 1 : -1});
-                console.log(relatedOptions);
+                console.log(relatedOptions[0].expiration);
                 var v = relatedOptions.map(function(x){return x.sig_v});
                 var r = relatedOptions.map(function(x){return '0x'+x.sig_r});
                 var s = relatedOptions.map(function(x){return '0x'+x.sig_s});
