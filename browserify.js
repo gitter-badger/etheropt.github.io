@@ -197,8 +197,6 @@ Main.loadMarket = function() {
                   option.optionChainID = optionChainID;
                   option.optionID = optionID;
                   option.id = id;
-                  option.fromcur = result.fromcur;
-                  option.tocur = result.tocur;
                   option.expiration = result.settlement_date;
                   option.signed_hash = result.signature_v2.signed_hash;
                   option.signed_value = result.signature_v2.signed_value;
@@ -230,14 +228,8 @@ Main.loadMarket = function() {
                     }
                     option.sell_orders = orders;
                   });
-                  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getPosition', [option.optionChainID, option.optionID, addrs[selectedAddr]], function(result) {
-                    option.position = result.toString();
-                  });
-                  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getCash', [option.optionChainID, addrs[selectedAddr]], function(result) {
-                    option.cash = result.toString();
-                  });
                   async.whilst(
-                    function () { return option.buy_orders==undefined || option.sell_orders==undefined || option.position==undefined || option.cash==undefined; },
+                    function () { return option.buy_orders==undefined || option.sell_orders==undefined; },
                     function (callback_waiting) {
                         setTimeout(function () {
                             callback_waiting(null);

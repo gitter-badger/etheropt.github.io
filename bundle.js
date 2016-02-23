@@ -198,8 +198,6 @@ Main.loadMarket = function() {
                   option.optionChainID = optionChainID;
                   option.optionID = optionID;
                   option.id = id;
-                  option.fromcur = result.fromcur;
-                  option.tocur = result.tocur;
                   option.expiration = result.settlement_date;
                   option.signed_hash = result.signature_v2.signed_hash;
                   option.signed_value = result.signature_v2.signed_value;
@@ -231,14 +229,8 @@ Main.loadMarket = function() {
                     }
                     option.sell_orders = orders;
                   });
-                  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getPosition', [option.optionChainID, option.optionID, addrs[selectedAddr]], function(result) {
-                    option.position = result.toString();
-                  });
-                  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getCash', [option.optionChainID, addrs[selectedAddr]], function(result) {
-                    option.cash = result.toString();
-                  });
                   async.whilst(
-                    function () { return option.buy_orders==undefined || option.sell_orders==undefined || option.position==undefined || option.cash==undefined; },
+                    function () { return option.buy_orders==undefined || option.sell_orders==undefined; },
                     function (callback_waiting) {
                         setTimeout(function () {
                             callback_waiting(null);
@@ -303,10 +295,10 @@ var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
-config.contract_market_addr = '0xe1a02394b72d08f730f0671ba864390842cfa01d';
+config.contract_market_addr = '0x78c981f5adf8c89145966713a831f448a6c3bac1';
 config.eth_testnet = true;
 config.eth_provider = 'http://localhost:8545';
-config.eth_addr = '0x0000000000000000000000000000000000000000';
+config.eth_addr = '0x18e79a47d8a58bef5aaecbba85ea1420649c64a8';
 config.eth_addr_pk = '';
 
 module.exports = config;

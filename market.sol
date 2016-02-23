@@ -17,6 +17,12 @@ contract Market {
     mapping(uint => Order) sellOrders;
     uint numSellOrders;
   }
+  struct TopLevel {
+    uint buyPrice;
+    uint buySize;
+    uint sellPrice;
+    uint sellSize;
+  }
   struct Position {
     mapping(uint => int) positions;
     int cash;
@@ -74,6 +80,49 @@ contract Market {
     }
   }
 
+  function getMarket() constant returns(uint[], uint[], uint[], int[], int[], int, int) {
+    uint[] memory optionIDs = new uint[](25);
+    uint[] memory strikes = new uint[](25);
+    uint[] memory ids = new uint[](25);
+    int[] memory positions = new int[](25);
+    int[] memory cashes = new int[](25);
+    uint z = 0;
+    for (int optionChainID=int(numOptionChains)-1; optionChainID>=0 && z<25; optionChainID--) {
+      if (optionChains[uint(optionChainID)].expired == false) {
+        for (uint optionID=0; optionID<optionChains[uint(optionChainID)].numOptions; optionID++) {
+          optionIDs[z] = uint(optionChainID)*1000 + optionID;
+          strikes[z] = optionChains[uint(optionChainID)].options[optionID].strike;
+          ids[z] = optionChains[uint(optionChainID)].options[optionID].id;
+          positions[z] = optionChains[uint(optionChainID)].positions[msg.sender].positions[optionID];
+          cashes[z] = optionChains[uint(optionChainID)].positions[msg.sender].cash;
+          z++;
+        }
+      }
+    }
+    return (optionIDs, strikes, ids, positions, cashes, getFunds(msg.sender), getAvailableFunds(msg.sender));
+  }
+
+  function getMarketTopLevels() returns(uint[], uint[], uint[], uint[]) {
+    uint[] memory buyPrices = new uint[](25);
+    uint[] memory buySizes = new uint[](25);
+    uint[] memory sellPrices = new uint[](25);
+    uint[] memory sellSizes = new uint[](25);
+    uint z = 0;
+    for (int optionChainID=int(numOptionChains)-1; optionChainID>=0 && z<25; optionChainID--) {
+      if (optionChains[uint(optionChainID)].expired == false) {
+        for (uint optionID=0; optionID<optionChains[uint(optionChainID)].numOptions; optionID++) {
+          TopLevel memory topLevel = getTopLevel(uint(optionChainID), optionID);
+          buyPrices[z] = topLevel.buyPrice;
+          buySizes[z] = topLevel.buySize;
+          sellPrices[z] = topLevel.sellPrice;
+          sellSizes[z] = topLevel.sellSize;
+          z++;
+        }
+      }
+    }
+    return (buyPrices, buySizes, sellPrices, sellSizes);
+  }
+
   function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value) {
     bool allSigned = true;
     if (optionChains[optionChainID].expired == false) {
@@ -102,6 +151,20 @@ contract Market {
       var optionChainID = numOptionChains++;
       OptionChain optionChain = optionChains[optionChainID];
       optionChain.expired = false;
+      for (uint i=0; i < strikes.length; i++) {
+        var optionID = optionChain.numOptions++;
+        Option option = optionChain.options[optionID];
+        option.id = ids[i];
+        option.strike = strikes[i];
+        option.factHash = factHashes[i];
+        option.ethAddr = ethAddrs[i];
+      }
+    }
+  }
+
+  function addToOptionChain(uint optionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs) {
+    if (msg.sender==admin) {
+      OptionChain optionChain = optionChains[optionChainID];
       for (uint i=0; i < strikes.length; i++) {
         var optionID = optionChain.numOptions++;
         Option option = optionChain.options[optionID];
@@ -274,6 +337,37 @@ contract Market {
     return (sellPrices, sellSizes);
   }
 
+  function getTopLevel(uint optionChainID, uint optionID) private constant returns(TopLevel) {
+    TopLevel memory topLevel;
+    uint watermark = 0;
+    uint size = 0;
+    for (uint i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
+      if (optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && optionChains[optionChainID].options[optionID].buyOrders[i].price>=watermark && optionChains[optionChainID].options[optionID].buyOrders[i].price>0) {
+        if (optionChains[optionChainID].options[optionID].buyOrders[i].price>watermark) {
+          size = 0;
+          watermark = optionChains[optionChainID].options[optionID].buyOrders[i].price;
+        }
+        size += optionChains[optionChainID].options[optionID].buyOrders[i].size;
+      }
+    }
+    topLevel.buyPrice = watermark;
+    topLevel.buySize = size;
+    watermark = 10000;
+    size = 0;
+    for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
+      if (optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && optionChains[optionChainID].options[optionID].sellOrders[i].price<=watermark && optionChains[optionChainID].options[optionID].sellOrders[i].price<10000) {
+        if (optionChains[optionChainID].options[optionID].sellOrders[i].price<watermark) {
+          size = 0;
+          watermark = optionChains[optionChainID].options[optionID].sellOrders[i].price;
+        }
+        size += optionChains[optionChainID].options[optionID].sellOrders[i].size;
+      }
+    }
+    topLevel.sellPrice = watermark;
+    topLevel.sellSize = size;
+    return topLevel;
+  }
+
   function cancelOrders() {
     for (uint optionChainID=0; optionChainID<numOptionChains; optionChainID++) {
       for (uint i=0; i<optionChains[optionChainID].numOptions; i++) {
@@ -350,15 +444,14 @@ contract Market {
     return totalMaxLoss;
   }
 
-  function min(uint a, uint b) constant returns(uint) {
-    if (a<b) {
-      return a;
-    } else {
-      return b;
+  function changeAdmin(address newAdmin) {
+    if (msg.sender == admin) {
+      admin = newAdmin;
     }
   }
-  function max(uint a, uint b) constant returns(uint) {
-    if (a>b) {
+
+  function min(uint a, uint b) constant returns(uint) {
+    if (a<b) {
       return a;
     } else {
       return b;

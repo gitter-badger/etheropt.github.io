@@ -61,10 +61,16 @@
           <p>This function gets the total sum of all deposits less withdrawals in the user's account.</p>
         <h2>getAvailableFunds(address user) constant returns(int)</h2>
           <p>This function gets the available funds in the user's account.</p>
+        <h2>getMarket() constant returns(uint[], uint[], uint[], int[], int[], int, int)</h2>
+          <p>This function gets an overview of the market, including the specified user's position. It will return up to 25 options. The return values are the option IDs (plus 1000 times the option chain IDs), strikes, Reality Keys IDs, positions, cash usage amounts, and the user's funds and available funds.</p>
+        <h2>getMarketTopLevels() constant returns(uint[], uint[], uint[], uint[])</h2>
+          <p>This function gets an overview of the market top levels. It will return up to 25 top levels that correspond to the top levels of the 25 options returned by getMarket(). The return values are the buy prices, buy sizes, sell prices, and sell sizes.</p>
         <h2>expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>
           <p>This function expires the specified option chain if all the provided signatures and values are valid.</p>
         <h2>addOptionChain(uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
-          <p>This function can only be run by the administrator. It adds an option chain, which consists of a collection of strikes and their associated Reality Key IDs and hashes.</p>
+          <p>This function can only be run by the administrator. It adds an option chain, which consists of a collection of strikes and their associated Reality Keys IDs and fact hashes.</p>
+        <h2>addToOptionChain(uint optionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
+          <p>This function can only be run by the administrator. It adds a collection of strikes and their associated Reality Keys IDs and fact hashes to an existing option chain.</p>
         <h2>isExpired(uint optionChainID) constant returns(bool)</h2>
           <p>This function returns a boolean representing whether the given option chain has been expired.</p>
         <h2>getNumOptionChains() constant returns(uint)</h2>
@@ -89,6 +95,8 @@
           <p>This function returns the top three buy prices and sizes. If there is more than one order at a particular price, then the volume is aggregated.</p>
         <h2>getOptionSellOrders(uint optionChainID, uint optionID) constant returns(uint[], uint[])</h2>
           <p>This function is similar to getOptionBuyOrders.</p>
+        <h2>getTopLevel(uint optionChainID, uint optionID) private constant returns(TopLevel)</h2>
+          <p>This function gets the top level buy and sell price and returns it as a TopLevel structure with fields buyPrice, buySize, sellPrice, and sellSize.</p>
         <h2>cancelOrders()</h2>
           <p>This function cancels all the user's outstanding orders in all options.</p>
         <h2>cancelOrdersOnChain(uint optionChainID)</h2>
@@ -97,10 +105,10 @@
           <p>This function returns the user's maximum possible loss after doing the specified trade.</p>
         <h2>getMaxLoss(address user) constant returns(int)</h2>
           <p>This function returns the user's maximum possible loss after expiring all options.</p>
+        <h2>changeAdmin(address newAdmin)</h2>
+          <p>This function changes the administrator address. It can only be run by the current administrator.</p>
         <h2>min(uint a, uint b) constant returns(uint)</h2>
           <p>This function returns the minimum of two numbers.</p>
-        <h2>max(uint a, uint b) constant returns(uint)</h2>
-          <p>This function returns the maximum of two numbers.</p>
     </div>
 
     <div id="footer">
