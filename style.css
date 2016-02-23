@@ -27,6 +27,7 @@ body, html {
   background: #eee;
   padding: 1em;
   border-top: 1px solid #ccc;
+  margin-bottom: 1em;
 }
 
 #connection {
