@@ -1,5 +1,4 @@
 var Web3 = require('web3');
-var config = require('./config.js');
 var utility = require('./utility.js');
 var request = require('request');
 var async = (typeof(window) === 'undefined') ? require('async') : require('async/dist/async.min.js');
@@ -227,6 +226,7 @@ Main.refresh = function() {
   Main.loadFunds();
   Main.loadMarket();
 }
+
 //globals
 var addrs = [config.eth_addr];
 var pks = [config.eth_addr_pk];

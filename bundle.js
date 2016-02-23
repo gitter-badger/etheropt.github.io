@@ -1,6 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bundle = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 var Web3 = _dereq_('web3');
-var config = _dereq_('./config.js');
 var utility = _dereq_('./utility.js');
 var request = _dereq_('request');
 var async = (typeof(window) === 'undefined') ? _dereq_('async') : _dereq_('async/dist/async.min.js');
@@ -228,6 +227,7 @@ Main.refresh = function() {
   Main.loadFunds();
   Main.loadMarket();
 }
+
 //globals
 var addrs = [config.eth_addr];
 var pks = [config.eth_addr_pk];
@@ -258,12 +258,12 @@ utility.readFile(config.contract_market+'.compiled', function(result){
 
 module.exports = {Main: Main, utility: utility};
 
-},{"./config.js":2,"./utility.js":130,"async":132,"async/dist/async.min.js":131,"request":3,"web3":174}],2:[function(_dereq_,module,exports){
+},{"./utility.js":130,"async":132,"async/dist/async.min.js":131,"request":3,"web3":174}],2:[function(_dereq_,module,exports){
 var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
-config.contract_market_addr = '0x00dbb8de1c7d38a46ef4e2c4858489e11211f26f';
+config.contract_market_addr = 'TBD';
 config.eth_testnet = true;
 config.eth_provider = 'http://localhost:8545';
 config.eth_addr = '0x0000000000000000000000000000000000000000';
