@@ -143,16 +143,20 @@ Main.loadAddresses = function() {
     }
   );
 }
+Main.loadFunds = function() {
+  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getFundsAndAvailable', [addrs[selectedAddr]], function(result) {
+    funds = result[0].toString();
+    availableFunds = result[1].toString();
+    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+  });
+}
 Main.loadMarket = function() {
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [], function(result) {
+  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [addrs[selectedAddr]], function(result) {
     var optionIDs = result[0];
     var strikes = result[1];
     var ids = result[2];
     var positions = result[3];
     var cashes = result[4];
-    var funds = result[5].toNumber();
-    var fundsAvailable = result[6].toNumber();
-    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
     utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketTopLevels', [], function(result) {
       var buyPrices = result[0];
       var buySizes = result[1];
@@ -219,8 +223,9 @@ Main.loadMarket = function() {
 Main.refresh = function() {
   Main.createCookie("user", JSON.stringify({"addrs": addrs, "pks": pks, "selectedAddr": selectedAddr}), 999);
   Main.connectionTest();
-  Main.loadMarket();
   Main.loadAddresses();
+  Main.loadFunds();
+  Main.loadMarket();
 }
 //globals
 var addrs = [config.eth_addr];
