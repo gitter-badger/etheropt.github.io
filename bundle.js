@@ -151,6 +151,7 @@ Main.loadFunds = function() {
   });
 }
 Main.loadMarket = function() {
+  $('#market-spinner').show();
   utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [addrs[selectedAddr]], function(result) {
     var optionIDs = result[0];
     var strikes = result[1];
@@ -214,6 +215,7 @@ Main.loadMarket = function() {
         },
         function(err, options) {
           new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
+          $('#market-spinner').hide();
           Main.tooltips();
         }
       );
