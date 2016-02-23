@@ -80,7 +80,11 @@ contract Market {
     }
   }
 
-  function getMarket() constant returns(uint[], uint[], uint[], int[], int[], int, int) {
+  function getFundsAndAvailable(address user) constant returns(int, int) {
+    return (getFunds(user), getAvailableFunds(user));
+  }
+
+  function getMarket(address user) constant returns(uint[], uint[], uint[], int[], int[]) {
     uint[] memory optionIDs = new uint[](25);
     uint[] memory strikes = new uint[](25);
     uint[] memory ids = new uint[](25);
@@ -93,13 +97,13 @@ contract Market {
           optionIDs[z] = uint(optionChainID)*1000 + optionID;
           strikes[z] = optionChains[uint(optionChainID)].options[optionID].strike;
           ids[z] = optionChains[uint(optionChainID)].options[optionID].id;
-          positions[z] = optionChains[uint(optionChainID)].positions[msg.sender].positions[optionID];
-          cashes[z] = optionChains[uint(optionChainID)].positions[msg.sender].cash;
+          positions[z] = optionChains[uint(optionChainID)].positions[user].positions[optionID];
+          cashes[z] = optionChains[uint(optionChainID)].positions[user].cash;
           z++;
         }
       }
     }
-    return (optionIDs, strikes, ids, positions, cashes, getFunds(msg.sender), getAvailableFunds(msg.sender));
+    return (optionIDs, strikes, ids, positions, cashes);
   }
 
   function getMarketTopLevels() returns(uint[], uint[], uint[], uint[]) {

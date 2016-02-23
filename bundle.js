@@ -153,7 +153,6 @@ Main.loadMarket = function() {
     var cashes = result[4];
     var funds = result[5].toNumber();
     var fundsAvailable = result[6].toNumber();
-    console.log(result);
     new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
     utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketTopLevels', [], function(result) {
       var buyPrices = result[0];
@@ -259,7 +258,7 @@ var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
-config.contract_market_addr = '0xf36769d562e7813f9619b4248d578f212e595b02';
+config.contract_market_addr = '0x00dbb8de1c7d38a46ef4e2c4858489e11211f26f';
 config.eth_testnet = true;
 config.eth_provider = 'http://localhost:8545';
 config.eth_addr = '0x0000000000000000000000000000000000000000';

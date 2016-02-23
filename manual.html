@@ -61,8 +61,10 @@
           <p>This function gets the total sum of all deposits less withdrawals in the user's account.</p>
         <h2>getAvailableFunds(address user) constant returns(int)</h2>
           <p>This function gets the available funds in the user's account.</p>
-        <h2>getMarket() constant returns(uint[], uint[], uint[], int[], int[], int, int)</h2>
-          <p>This function gets an overview of the market, including the specified user's position. It will return up to 25 options. The return values are the option IDs (plus 1000 times the option chain IDs), strikes, Reality Keys IDs, positions, cash usage amounts, and the user's funds and available funds.</p>
+        <h2>getFundsAndAvailable(address user) constant returns(int, int)</h2>
+          <p>This function gets the funds and available funds in the user's account.</p>
+        <h2>getMarket() constant returns(uint[], uint[], uint[], int[], int[])</h2>
+          <p>This function gets an overview of the market, including the specified user's position. It will return up to 25 options. The return values are the option IDs (plus 1000 times the option chain IDs), strikes, Reality Keys IDs, positions, and cash usage amounts.</p>
         <h2>getMarketTopLevels() constant returns(uint[], uint[], uint[], uint[])</h2>
           <p>This function gets an overview of the market top levels. It will return up to 25 top levels that correspond to the top levels of the 25 options returned by getMarket(). The return values are the buy prices, buy sizes, sell prices, and sell sizes.</p>
         <h2>expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>

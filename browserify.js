@@ -152,7 +152,6 @@ Main.loadMarket = function() {
     var cashes = result[4];
     var funds = result[5].toNumber();
     var fundsAvailable = result[6].toNumber();
-    console.log(result);
     new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
     utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketTopLevels', [], function(result) {
       var buyPrices = result[0];
