@@ -2,10 +2,10 @@ var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
 config.contract_market = 'market.sol';
-config.contract_market_addr = '0x78c981f5adf8c89145966713a831f448a6c3bac1';
+config.contract_market_addr = '0xf36769d562e7813f9619b4248d578f212e595b02';
 config.eth_testnet = true;
 config.eth_provider = 'http://localhost:8545';
-config.eth_addr = '0x18e79a47d8a58bef5aaecbba85ea1420649c64a8';
+config.eth_addr = '0x0000000000000000000000000000000000000000';
 config.eth_addr_pk = '';
 
 module.exports = config;

@@ -196,8 +196,14 @@ Main.loadMarket = function() {
               option.sig_r = result.signature_v2.sig_r;
               option.sig_s = result.signature_v2.sig_s;
               option.sig_v = result.signature_v2.sig_v;
-              option.buy_orders = [{price: buyPrice, size: buySize}];
-              option.sell_orders = [{price: sellPrice, size: sellSize}];
+              option.buy_orders = [];
+              if (buySize>0) {
+                option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
+              }
+              option.sell_orders = [];
+              if (sellSize>0) {
+                option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
+              }
               callback_map(null, option);
             }
           });

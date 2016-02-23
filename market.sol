@@ -342,7 +342,7 @@ contract Market {
     uint watermark = 0;
     uint size = 0;
     for (uint i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
-      if (optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && optionChains[optionChainID].options[optionID].buyOrders[i].price>=watermark && optionChains[optionChainID].options[optionID].buyOrders[i].price>0) {
+      if (optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && optionChains[optionChainID].options[optionID].buyOrders[i].price>=watermark) {
         if (optionChains[optionChainID].options[optionID].buyOrders[i].price>watermark) {
           size = 0;
           watermark = optionChains[optionChainID].options[optionID].buyOrders[i].price;
@@ -355,7 +355,7 @@ contract Market {
     watermark = 10000;
     size = 0;
     for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
-      if (optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && optionChains[optionChainID].options[optionID].sellOrders[i].price<=watermark && optionChains[optionChainID].options[optionID].sellOrders[i].price<10000) {
+      if (optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && optionChains[optionChainID].options[optionID].sellOrders[i].price<=watermark) {
         if (optionChains[optionChainID].options[optionID].sellOrders[i].price<watermark) {
           size = 0;
           watermark = optionChains[optionChainID].options[optionID].sellOrders[i].price;
