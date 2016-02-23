@@ -6,7 +6,7 @@ body, html {
 #header {
   width: 100%;
   font-size: 2em;
-  height: 80px;
+  height: 100px;
   padding: 0;
 }
 #header .helper {
@@ -39,4 +39,9 @@ body, html {
 }
 .navbar-brand img {
   height: 100%;
+}
+
+.no-nav {
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 1em;
 }
