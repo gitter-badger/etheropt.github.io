@@ -143,113 +143,71 @@ Main.loadAddresses = function() {
     }
   );
 }
-Main.loadFunds = function() {
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getFunds', [addrs[selectedAddr]], function(result) {
-    funds = result.toString();
-    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
-  });
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getAvailableFunds', [addrs[selectedAddr]], function(result) {
-    fundsAvailable = result.toString();
-    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
-  });
-  new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
-}
 Main.loadMarket = function() {
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptionChains', [], function(result) {
-    var numOptionChains = parseInt(result.toString());
-    var optionChainIDs = [];
-    for (var optionChainID = Math.max(0,numOptionChains-5); optionChainID<numOptionChains; optionChainID++) {
-      optionChainIDs.push(optionChainID);
-    }
-    async.map(optionChainIDs,
-      function(optionChainID, callback_map) {
-        utility.proxyCall(web3, myContract, config.contract_market_addr, 'isExpired', [optionChainID], function(result) {
-          if (result == false) {
-            utility.proxyCall(web3, myContract, config.contract_market_addr, 'getNumOptions', [optionChainID], function(result) {
-              callback_map(null, {optionChainID: optionChainID, numOptions: result.toString()});
-            });
-          } else {
-            callback_map(null, {optionChainID: optionChainID, numOptions: 0});
-          }
-        });
-      },
-      function(err, results){
-        var optionLookups = [];
-        for (var i=0; i<results.length; i++) {
-          for (var j=0; j<results[i].numOptions; j++) {
-            optionLookups.push({optionChainID: results[i].optionChainID, optionID: j});
-          }
+  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [], function(result) {
+    var optionIDs = result[0];
+    var strikes = result[1];
+    var ids = result[2];
+    var positions = result[3];
+    var cashes = result[4];
+    var funds = result[5].toNumber();
+    var fundsAvailable = result[6].toNumber();
+    new EJS({url: config.home_url+'/'+'funds.ejs'}).update('funds', {funds: funds, fundsAvailable: fundsAvailable});
+    utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketTopLevels', [], function(result) {
+      var buyPrices = result[0];
+      var buySizes = result[1];
+      var sellPrices = result[2];
+      var sellSizes = result[3];
+      var is = [];
+      for (var i=0; i<optionIDs.length; i++) {
+        if (strikes[i]>0) {
+          is.push(i);
         }
-        async.map(optionLookups,
-          function(optionLookup, callback_map) {
-            var optionChainID = optionLookup.optionChainID;
-            var optionID = optionLookup.optionID;
-            utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOption', [optionChainID, optionID], function(result) {
-              var option = result;
-              var id = option[0].toString();
-              var strike = option[1].toString();
-              var result = undefined;
-              request.get('https://www.realitykeys.com/api/v1/exchange/'+id+'?accept_terms_of_service=current', function(err, httpResponse, body){
-                if (!err) {
-                  result = JSON.parse(body);
-                  var option = Object();
-                  option.strike = strike / 100.0;
-                  option.optionChainID = optionChainID;
-                  option.optionID = optionID;
-                  option.id = id;
-                  option.expiration = result.settlement_date;
-                  option.signed_hash = result.signature_v2.signed_hash;
-                  option.signed_value = result.signature_v2.signed_value;
-                  option.fact_hash = result.signature_v2.fact_hash;
-                  option.sig_r = result.signature_v2.sig_r;
-                  option.sig_s = result.signature_v2.sig_s;
-                  option.sig_v = result.signature_v2.sig_v;
-                  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionBuyOrders', [option.optionChainID, option.optionID], function(result) {
-                    var orders = [];
-                    for (var i=0; i<result[0].length; i++) {
-                      var order = Object();
-                      order.price = parseFloat(result[0][i].toString())/10000.0;
-                      order.size = parseFloat(result[1][i].toString());
-                      if (order.size>0) {
-                        orders.push(order);
-                      }
-                    }
-                    option.buy_orders = orders;
-                  });
-                  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionSellOrders', [option.optionChainID, option.optionID], function(result) {
-                    var orders = [];
-                    for (var i=0; i<result[0].length; i++) {
-                      var order = Object();
-                      order.price = parseFloat(result[0][i].toString())/10000.0;
-                      order.size = parseFloat(result[1][i].toString());
-                      if (order.size>0) {
-                        orders.push(order);
-                      }
-                    }
-                    option.sell_orders = orders;
-                  });
-                  async.whilst(
-                    function () { return option.buy_orders==undefined || option.sell_orders==undefined; },
-                    function (callback_waiting) {
-                        setTimeout(function () {
-                            callback_waiting(null);
-                        }, 1000);
-                    },
-                    function (err) {
-                      callback_map(null, option);
-                    }
-                  );
-                }
-              });
-            });
-          },
-          function(err, options) {
-            new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
-            Main.tooltips();
-          }
-        );
       }
-    );
+      async.map(is,
+        function(i, callback_map) {
+          var optionChainID = optionIDs[i].toNumber() / 1000;
+          var optionID = optionIDs[i].toNumber() % 1000;
+          var id = ids[i].toNumber();
+          var strike = strikes[i].toNumber();
+          var cash = cashes[i].toNumber();
+          var position = positions[i].toNumber();
+          var buyPrice = buyPrices[i].toNumber();
+          var buySize = buySizes[i].toNumber();
+          var sellPrice = sellPrices[i].toNumber();
+          var sellSize = sellSizes[i].toNumber();
+          var result = undefined;
+          request.get('https://www.realitykeys.com/api/v1/exchange/'+id+'?accept_terms_of_service=current', function(err, httpResponse, body){
+            if (!err) {
+              result = JSON.parse(body);
+              var option = Object();
+              option.strike = strike / 100.0;
+              option.optionChainID = optionChainID;
+              option.optionID = optionID;
+              option.cash = cash;
+              option.position = position;
+              option.id = id;
+              option.expiration = result.settlement_date;
+              option.fromcur = result.fromcur;
+              option.tocur = result.tocur;
+              option.signed_hash = result.signature_v2.signed_hash;
+              option.signed_value = result.signature_v2.signed_value;
+              option.fact_hash = result.signature_v2.fact_hash;
+              option.sig_r = result.signature_v2.sig_r;
+              option.sig_s = result.signature_v2.sig_s;
+              option.sig_v = result.signature_v2.sig_v;
+              option.buy_orders = [{price: buyPrice, size: buySize}];
+              option.sell_orders = [{price: sellPrice, size: sellSize}];
+              callback_map(null, option);
+            }
+          });
+        },
+        function(err, options) {
+          new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
+          Main.tooltips();
+        }
+      );
+    });
   });
 }
 Main.refresh = function() {
@@ -257,7 +215,6 @@ Main.refresh = function() {
   Main.connectionTest();
   Main.loadMarket();
   Main.loadAddresses();
-  Main.loadFunds();
 }
 //globals
 var addrs = [config.eth_addr];
