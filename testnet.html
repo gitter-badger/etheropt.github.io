@@ -14,7 +14,7 @@
     <script src="ejs_production.js" type="text/javascript"></script>
     <script src="config_testnet.js" type="text/javascript"></script>
     <script src="bundle.js" type="text/javascript"></script>
-    <title>Etheropt</title>
+    <title>Etheropt TESTNET</title>
   </head>
 
   <body>
@@ -22,7 +22,7 @@
     <div id="header">
       <img src="logo.svg" />
       <div class="helper"></div>
-      Etheropt
+      Etheropt TESTNET
     </div>
 
     <nav class="navbar navbar-default">
@@ -34,6 +34,10 @@
 
     <div id="content">
       <div id="alerts"></div>
+      <div class="alert alert-warning alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        This is the testnet version of Etheropt. The mainnet version will be deployed soon.
+      </div>
       <div class="panel panel-default">
         <div class="panel-body">
           <p>Etheropt is a decentralized options exchange built on <a href="https://ethereum.org/" target="_blank">Ethereum</a>. The options you see here are <a href="https://en.wikipedia.org/wiki/Binary_option" target="_blank">binary call options</a> on the price of Ethereum in USD as reported by <a href="https://poloniex.com/exchange#btc_eth" target="_blank">Poloniex</a> and <a href="http://www.coindesk.com/price/" target="_blank">Coindesk</a> and verified by <a href="https://www.realitykeys.com/" target="_blank">Reality Keys</a>. Etheropt has no owner. Its entire operation is described and executed by an Ethereum <a href="https://github.com/Etherboost/etheropt/blob/master/market.sol" target="_blank">smart contract</a>.</p>

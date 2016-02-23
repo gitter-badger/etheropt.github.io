@@ -1,4 +1,4 @@
-var config = require('./config.js');
+var config = (typeof(global.config) == 'undefined') ? require('./config.js') : global.config;
 var fs = require('fs');
 var request = require('request');
 var async = (typeof(window) === 'undefined') ? require('async') : require('async/dist/async.min.js');
