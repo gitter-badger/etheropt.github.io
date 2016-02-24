@@ -272,8 +272,10 @@ config.eth_provider = 'http://localhost:8545';
 config.eth_addr = '0x0000000000000000000000000000000000000000';
 config.eth_addr_pk = '';
 
-global.config = config;
-module.exports = config;
+try {
+  global.config = config;
+  module.exports = config;
+} catch (err) {}
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],3:[function(_dereq_,module,exports){
@@ -31708,7 +31710,7 @@ module.exports = Request
 }).call(this,_dereq_('_process'),_dereq_("buffer").Buffer)
 },{"./lib/auth":4,"./lib/cookies":5,"./lib/getProxyFromURI":6,"./lib/har":7,"./lib/helpers":8,"./lib/multipart":9,"./lib/oauth":10,"./lib/querystring":11,"./lib/redirect":12,"./lib/tunnel":13,"_process":377,"aws-sign2":14,"aws4":15,"bl":17,"buffer":305,"caseless":28,"extend":31,"forever-agent":32,"form-data":33,"hawk":62,"http":409,"http-signature":63,"https":351,"is-typedarray":108,"mime-types":111,"stream":408,"stringstream":120,"url":415,"util":419,"zlib":303}],130:[function(_dereq_,module,exports){
 (function (global,Buffer){
-var config = (typeof(global.config) == 'undefined') ? _dereq_('./config.js') : global.config;
+var config = (typeof(global.config) == 'undefined' && typeof(config) == 'undefined') ? _dereq_('./config.js') : global.config;
 var fs = _dereq_('fs');
 var request = _dereq_('request');
 var async = (typeof(window) === 'undefined') ? _dereq_('async') : _dereq_('async/dist/async.min.js');

@@ -8,5 +8,7 @@ config.eth_provider = 'http://localhost:8545';
 config.eth_addr = '0x0000000000000000000000000000000000000000';
 config.eth_addr_pk = '';
 
-global.config = config;
-module.exports = config;
+try {
+  global.config = config;
+  module.exports = config;
+} catch (err) {}
