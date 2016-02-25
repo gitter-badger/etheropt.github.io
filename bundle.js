@@ -171,7 +171,7 @@ Main.loadMarket = function() {
       }
       async.map(is,
         function(i, callback_map) {
-          var optionChainID = optionIDs[i].toNumber() / 1000;
+          var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
           var optionID = optionIDs[i].toNumber() % 1000;
           var id = ids[i].toNumber();
           var strike = strikes[i].toNumber();
