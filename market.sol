@@ -198,13 +198,15 @@ contract Market {
         }
         OptionChain optionChain = optionChains[optionChainID];
         for (i=0; i < strikes.length; i++) {
-          uint optionID = optionChain.numOptions++;
-          Option option = optionChain.options[i];
-          option.id = ids[i];
-          option.strike = strikes[i];
-          option.factHash = factHashes[i];
-          option.ethAddr = ethAddrs[i];
-          optionChain.options[i] = option;
+          if (optionChain.numOptions<5) {
+            uint optionID = optionChain.numOptions++;
+            Option option = optionChain.options[i];
+            option.id = ids[i];
+            option.strike = strikes[i];
+            option.factHash = factHashes[i];
+            option.ethAddr = ethAddrs[i];
+            optionChain.options[i] = option;
+          }
         }
       }
     }
