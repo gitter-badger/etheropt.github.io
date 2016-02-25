@@ -210,7 +210,9 @@ contract Market {
           orderID = optionChains[optionChainID].options[optionID].numBuyOrders++;
         } else {
           for (i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders && (orderID>=5 || optionChains[optionChainID].options[optionID].buyOrders[orderID].size!=0); i++) {
-            if (optionChains[optionChainID].options[optionID].buyOrders[i].price<price && (orderID>=5 || (optionChains[optionChainID].options[optionID].buyOrders[i].price<optionChains[optionChainID].options[optionID].buyOrders[orderID].price))) {
+            if (optionChains[optionChainID].options[optionID].buyOrders[i].size==0) {
+              orderID = i;
+            } else if (optionChains[optionChainID].options[optionID].buyOrders[i].price<price && (orderID>=5 || (optionChains[optionChainID].options[optionID].buyOrders[i].price<optionChains[optionChainID].options[optionID].buyOrders[orderID].price))) {
               orderID = i;
             }
           }
@@ -247,7 +249,9 @@ contract Market {
           orderID = optionChains[optionChainID].options[optionID].numSellOrders++;
         } else {
           for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders && (orderID>=5 || optionChains[optionChainID].options[optionID].sellOrders[orderID].size!=0); i++) {
-            if (optionChains[optionChainID].options[optionID].sellOrders[i].price>price && (orderID>=5 || (optionChains[optionChainID].options[optionID].sellOrders[i].price>optionChains[optionChainID].options[optionID].sellOrders[orderID].price))) {
+            if (optionChains[optionChainID].options[optionID].sellOrders[i].size==0) {
+              orderID = i;
+            } else if (optionChains[optionChainID].options[optionID].sellOrders[i].price>price && (orderID>=5 || (optionChains[optionChainID].options[optionID].sellOrders[i].price>optionChains[optionChainID].options[optionID].sellOrders[orderID].price))) {
               orderID = i;
             }
           }
