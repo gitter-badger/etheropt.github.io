@@ -178,7 +178,7 @@ contract Market {
     }
   }
 
-  function addOptionChain(uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs) {
+  function addOptionChain(uint existingOptionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs) {
     if (msg.sender==admin) {
       uint optionChainID = 6;
       if (numOptionChains<6) {
@@ -191,7 +191,11 @@ contract Market {
         }
       }
       if (optionChainID<6) {
-        delete optionChains[optionChainID];
+        if (existingOptionChainID<6) {
+          optionChainID = existingOptionChainID;
+        } else {
+          delete optionChains[optionChainID];
+        }
         OptionChain optionChain = optionChains[optionChainID];
         for (i=0; i < strikes.length; i++) {
           uint optionID = optionChain.numOptions++;

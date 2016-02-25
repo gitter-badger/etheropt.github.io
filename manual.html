@@ -52,10 +52,8 @@
           <p>This function adds the sent value to the user's account.</p>
         <h2>withdrawFunds(uint amount)</h2>
           <p>This function withdraw's the specified amount from the user's account and cancels all the user's outstanding orders. If the user doesn't have enough available funds to cover the withdrawal, then no withdrawal takes place.</p>
-        <h2>getFunds(address user) constant returns(int)</h2>
-          <p>This function gets the total sum of all deposits less withdrawals in the user's account.</p>
-        <h2>getAvailableFunds(address user) constant returns(int)</h2>
-          <p>This function gets the available funds in the user's account.</p>
+        <h2>getFunds(address user, bool onlyAvailable) constant returns(int)</h2>
+          <p>This function gets the total sum of all deposits less withdrawals in the user's account. If the onlyAvailable flag is true, it adds in the maximum possible loss so that it will return the total available funds.</p>
         <h2>getFundsAndAvailable(address user) constant returns(int, int)</h2>
           <p>This function gets the funds and available funds in the user's account.</p>
         <h2>getMarket(address user) constant returns(uint[], uint[], uint[], int[], int[])</h2>
@@ -66,22 +64,8 @@
           <p>This function expires the specified option chain if all the provided signatures and values are valid.</p>
         <h2>expireUser(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>
           <p>This function expires the specified option chain for the specified user if all the provided signatures and values are valid. It then marks the user's position for the option chain as expired.</p>
-        <h2>addOptionChain(uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
-          <p>This function can only be run by the administrator. It adds an option chain, which consists of a collection of strikes and their associated Reality Keys IDs and fact hashes. There is a limit on the number of option chains that can be created (the limit is 6). Once that limit is met, new option chains must replace expired ones.</p>
-        <h2>addToOptionChain(uint optionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
-          <p>This function can only be run by the administrator. It adds a collection of strikes and their associated Reality Keys IDs and fact hashes to an existing option chain.</p>
-        <h2>isExpired(uint optionChainID) constant returns(bool)</h2>
-          <p>This function returns a boolean representing whether the given option chain has been expired.</p>
-        <h2>getNumOptionChains() constant returns(uint)</h2>
-          <p>This function returns the number of option chains.</p>
-        <h2>getNumOptions(uint optionChainID) constant returns(uint)</h2>
-          <p>This function returns the number of options associated with the specified option chain.</p>
-        <h2>getOption(uint optionChainID, uint optionID) constant returns(uint, uint, bytes32, address)</h2>
-          <p>This function looks up an option and returns its Reality Keys ID, strike, fact hash, and signing address.</p>
-        <h2>getPosition(uint optionChainID, uint optionID, address user) constant returns(int)</h2>
-          <p>This function gets the user's current position on a particular option.</p>
-        <h2>getCash(uint optionChainID, address user) constant returns(int)</h2>
-          <p>This function gets the user's current cash usage on a particular option chain.</p>
+        <h2>addOptionChain(uint existingOptionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
+          <p>This function can only be run by the administrator. If the existingOptionChainID parameter is greater than 6, it adds an option chain, which consists of a collection of strikes and their associated Reality Keys IDs and fact hashes. There is a limit on the number of option chains that can be created (the limit is 6). Once that limit is met, new option chains must replace expired ones. If the existingOptionChainID is less than 6, this function will append the new strikes to an existing option chain.</p>
         <h2>placeBuyOrder(uint optionChainID, uint optionID, uint price, uint size)</h2>
           <p>This function places a buy order, executes it against existing sell orders, and leaves the remainder on the book. There is a limit on the number of resting orders (the limit is 5). Once the limit is met, new orders will only rest if they improve the price of the worst order, which will be replaced. If the user does not have enough available funds, the order will be cancelled. Also, any sell orders that would otherwise be immediatelly executed against this order but don't have enough available funds will be cancelled.</p>
         <h2>placeSellOrder(uint optionChainID, uint optionID, uint price, uint size)</h2>
@@ -90,20 +74,12 @@
           <p>This function is used by orderMatchSell to match the new sell order with an existing buy order.</p>
         <h2>orderMatchSell(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint)</h2>
           <p>This function is used by orderMatchBuy to match the new buy order with an existing sell order.</p>
-        <h2>getOptionBuyOrders(uint optionChainID, uint optionID) constant returns(uint[], uint[])</h2>
-          <p>This function returns the top three buy prices and sizes. If there is more than one order at a particular price, then the volume is aggregated.</p>
-        <h2>getOptionSellOrders(uint optionChainID, uint optionID) constant returns(uint[], uint[])</h2>
-          <p>This function is similar to getOptionBuyOrders.</p>
         <h2>getTopLevel(uint optionChainID, uint optionID) private constant returns(TopLevel)</h2>
           <p>This function gets the top level buy and sell price and returns it as a TopLevel structure with fields buyPrice, buySize, sellPrice, and sellSize.</p>
         <h2>cancelOrders()</h2>
           <p>This function cancels all the user's outstanding orders in all options.</p>
-        <h2>cancelOrdersOnOption(uint optionChainID, uint optionID)</h2>
-          <p>This function cancels all the user's oustanding orders in the specified option in the specified option chain.</p>
         <h2>getMaxLossAfterTrade(address user, uint optionChainID, uint optionID, int positionChange, int cashChange) constant returns(int)</h2>
           <p>This function returns the user's maximum possible loss after doing the specified trade.</p>
-        <h2>getMaxLoss(address user) constant returns(int)</h2>
-          <p>This function returns the user's maximum possible loss after expiring all options.</p>
         <h2>changeAdmin(address newAdmin)</h2>
           <p>This function changes the administrator address. It can only be run by the current administrator.</p>
         <h2>min(uint a, uint b) constant returns(uint)</h2>

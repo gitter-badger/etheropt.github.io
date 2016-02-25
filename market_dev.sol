@@ -105,3 +105,22 @@ function getAvailableFunds(address user) constant returns(int) {
     return 0;
   }
 }
+
+function isExpired(uint optionChainID) constant returns(bool) {
+  return optionChains[optionChainID].expired;
+}
+function getNumOptionChains() constant returns(uint) {
+  return numOptionChains;
+}
+function getNumOptions(uint optionChainID) constant returns(uint) {
+  return optionChains[optionChainID].numOptions;
+}
+function getOption(uint optionChainID, uint optionID) constant returns(uint, uint, bytes32, address) {
+  return (optionChains[optionChainID].options[optionID].id, optionChains[optionChainID].options[optionID].strike, optionChains[optionChainID].options[optionID].factHash, optionChains[optionChainID].options[optionID].ethAddr);
+}
+function getPosition(uint optionChainID, uint optionID, address user) constant returns(int) {
+  return optionChains[optionChainID].positions[user].positions[optionID];
+}
+function getCash(uint optionChainID, address user) constant returns(int) {
+  return optionChains[optionChainID].positions[user].cash;
+}
