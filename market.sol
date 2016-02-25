@@ -17,12 +17,6 @@ contract Market {
     mapping(uint => Order) sellOrders;
     uint numSellOrders;
   }
-  struct TopLevel {
-    uint buyPrice;
-    uint buySize;
-    uint sellPrice;
-    uint sellSize;
-  }
   struct Position {
     mapping(uint => int) positions;
     int cash;
@@ -115,11 +109,7 @@ contract Market {
     for (int optionChainID=int(numOptionChains)-1; optionChainID>=0 && z<30; optionChainID--) {
       if (optionChains[uint(optionChainID)].expired == false) {
         for (uint optionID=0; optionID<optionChains[uint(optionChainID)].numOptions; optionID++) {
-          TopLevel memory topLevel = getTopLevel(uint(optionChainID), optionID);
-          buyPrices[z] = topLevel.buyPrice;
-          buySizes[z] = topLevel.buySize;
-          sellPrices[z] = topLevel.sellPrice;
-          sellSizes[z] = topLevel.sellSize;
+          (buyPrices[z], buySizes[z], sellPrices[z], sellSizes[z]) = getTopLevel(uint(optionChainID), optionID);
           z++;
         }
       }
@@ -127,53 +117,36 @@ contract Market {
     return (buyPrices, buySizes, sellPrices, sellSizes);
   }
 
-  function expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint[] value) {
+  function expire(uint accountID, uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint[] value) {
     bool allSigned = true;
     if (optionChains[optionChainID].expired == false) {
       for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-        bytes32 hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
-        address signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);
+        address signerAddress = ecrecover(sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]), v[optionID], r[optionID], s[optionID]);
         if (signerAddress != optionChains[optionChainID].options[optionID].ethAddr) {
           allSigned = false;
         }
       }
       if (allSigned) {
-        if (optionChains[optionChainID].numPositionsExpired < optionChains[optionChainID].numPositions) {
-          for (uint accountID=1; accountID<=numAccounts; accountID++) {
-            if (optionChains[optionChainID].positions[accounts[accountID].user].expired == false) {
-              int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
-              for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-                result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
-              }
-              accounts[accountID].capital = accounts[accountID].capital + result;
-              optionChains[optionChainID].positions[accounts[accountID].user].expired = true;
-              optionChains[optionChainID].numPositionsExpired++;
+        uint lastAccount = numAccounts;
+        if (accountID==0) {
+          accountID = 1;
+        } else {
+          lastAccount = accountID;
+        }
+        for (accountID=accountID; accountID<=lastAccount; accountID++) {
+          if (optionChains[optionChainID].positions[accounts[accountID].user].expired == false) {
+            int result = optionChains[optionChainID].positions[accounts[accountID].user].cash;
+            for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
+              result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountID].user].positions[optionID]);
             }
+            accounts[accountID].capital = accounts[accountID].capital + result;
+            optionChains[optionChainID].positions[accounts[accountID].user].expired = true;
+            optionChains[optionChainID].numPositionsExpired++;
           }
         }
-        optionChains[optionChainID].expired = true;
-      }
-    }
-  }
-
-  function expireUser(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint[] value) {
-    bool allSigned = true;
-    if (optionChains[optionChainID].expired == false) {
-      for (uint optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-        bytes32 hash = sha3(optionChains[optionChainID].options[optionID].factHash, value[optionID]);
-        address signerAddress = ecrecover(hash, v[optionID], r[optionID], s[optionID]);
-        if (signerAddress != optionChains[optionChainID].options[optionID].ethAddr) {
-          allSigned = false;
+        if (optionChains[optionChainID].numPositionsExpired == optionChains[optionChainID].numPositions) {
+          optionChains[optionChainID].expired = true;
         }
-      }
-      if (allSigned && accountIDs[msg.sender]>0 && optionChains[optionChainID].positions[accounts[accountIDs[msg.sender]].user].expired == false) {
-        int result = optionChains[optionChainID].positions[accounts[accountIDs[msg.sender]].user].cash;
-        for (optionID=0; optionID<optionChains[optionChainID].numOptions; optionID++) {
-          result += (int(value[optionID]) * optionChains[optionChainID].positions[accounts[accountIDs[msg.sender]].user].positions[optionID]);
-        }
-        accounts[accountIDs[msg.sender]].capital = accounts[accountIDs[msg.sender]].capital + result;
-        optionChains[optionChainID].positions[accounts[accountIDs[msg.sender]].user].expired = true;
-        optionChains[optionChainID].numPositionsExpired++;
       }
     }
   }
@@ -236,17 +209,14 @@ contract Market {
         if (optionChains[optionChainID].options[optionID].numBuyOrders < 5) {
           orderID = optionChains[optionChainID].options[optionID].numBuyOrders++;
         } else {
-          for (i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
-            if (optionChains[optionChainID].options[optionID].buyOrders[i].price<price && (orderID>=5 || optionChains[optionChainID].options[optionID].buyOrders[i].price<optionChains[optionChainID].options[optionID].buyOrders[orderID].price)) {
+          for (i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders && (orderID>=5 || optionChains[optionChainID].options[optionID].buyOrders[orderID].size!=0); i++) {
+            if (optionChains[optionChainID].options[optionID].buyOrders[i].price<price && (orderID>=5 || (optionChains[optionChainID].options[optionID].buyOrders[i].price<optionChains[optionChainID].options[optionID].buyOrders[orderID].price))) {
               orderID = i;
             }
           }
         }
         if (orderID<5) {
-          Order order = optionChains[optionChainID].options[optionID].buyOrders[orderID];
-          order.price = price;
-          order.size = size;
-          order.user = msg.sender;
+          optionChains[optionChainID].options[optionID].buyOrders[orderID] = Order(price, size, msg.sender);
         }
       }
     }
@@ -276,17 +246,14 @@ contract Market {
         if (optionChains[optionChainID].options[optionID].numSellOrders < 5) {
           orderID = optionChains[optionChainID].options[optionID].numSellOrders++;
         } else {
-          for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
-            if (optionChains[optionChainID].options[optionID].sellOrders[i].price>price && (orderID>=5 || optionChains[optionChainID].options[optionID].sellOrders[i].price>optionChains[optionChainID].options[optionID].sellOrders[orderID].price)) {
+          for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders && (orderID>=5 || optionChains[optionChainID].options[optionID].sellOrders[orderID].size!=0); i++) {
+            if (optionChains[optionChainID].options[optionID].sellOrders[i].price>price && (orderID>=5 || (optionChains[optionChainID].options[optionID].sellOrders[i].price>optionChains[optionChainID].options[optionID].sellOrders[orderID].price))) {
               orderID = i;
             }
           }
         }
         if (orderID<5) {
-          Order order = optionChains[optionChainID].options[optionID].sellOrders[orderID];
-          order.price = price;
-          order.size = size;
-          order.user = msg.sender;
+          optionChains[optionChainID].options[optionID].sellOrders[orderID] = Order(price, size, msg.sender);
         }
       }
     }
@@ -338,8 +305,11 @@ contract Market {
     return size;
   }
 
-  function getTopLevel(uint optionChainID, uint optionID) private constant returns(TopLevel) {
-    TopLevel memory topLevel;
+  function getTopLevel(uint optionChainID, uint optionID) private constant returns(uint, uint, uint, uint) {
+    uint buyPrice = 0;
+    uint buySize = 0;
+    uint sellPrice = 0;
+    uint sellSize = 0;
     uint watermark = 0;
     uint size = 0;
     for (uint i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
@@ -351,8 +321,8 @@ contract Market {
         size += optionChains[optionChainID].options[optionID].buyOrders[i].size;
       }
     }
-    topLevel.buyPrice = watermark;
-    topLevel.buySize = size;
+    buyPrice = watermark;
+    buySize = size;
     watermark = 10000;
     size = 0;
     for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
@@ -364,9 +334,9 @@ contract Market {
         size += optionChains[optionChainID].options[optionID].sellOrders[i].size;
       }
     }
-    topLevel.sellPrice = watermark;
-    topLevel.sellSize = size;
-    return topLevel;
+    sellPrice = watermark;
+    sellSize = size;
+    return (buyPrice, buySize, sellPrice, sellSize);
   }
 
   function cancelOrders() {

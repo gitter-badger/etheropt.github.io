@@ -60,10 +60,8 @@
           <p>This function gets an overview of the market, including the specified user's position. It will return up to 25 options. The return values are the option IDs (plus 1000 times the option chain IDs), strikes, Reality Keys IDs, positions, and cash usage amounts.</p>
         <h2>getMarketTopLevels() constant returns(uint[], uint[], uint[], uint[])</h2>
           <p>This function gets an overview of the market top levels. It will return up to 25 top levels that correspond to the top levels of the 25 options returned by getMarket(). The return values are the buy prices, buy sizes, sell prices, and sell sizes.</p>
-        <h2>expire(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>
-          <p>This function expires the specified option chain if all the provided signatures and values are valid.</p>
-        <h2>expireUser(uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>
-          <p>This function expires the specified option chain for the specified user if all the provided signatures and values are valid. It then marks the user's position for the option chain as expired.</p>
+        <h2>expire(uint accountID, uint optionChainID, uint8[] v, bytes32[] r, bytes32[] s, uint256[] value)</h2>
+          <p>This function expires the specified option chain if all the provided signatures and values are valid. If the accountID is 0, it expires all accounts. If the accountID is greater than zero, then it expires just the specified account (and marks it as expired).</p>
         <h2>addOptionChain(uint existingOptionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs)</h2>
           <p>This function can only be run by the administrator. If the existingOptionChainID parameter is greater than 6, it adds an option chain, which consists of a collection of strikes and their associated Reality Keys IDs and fact hashes. There is a limit on the number of option chains that can be created (the limit is 6). Once that limit is met, new option chains must replace expired ones. If the existingOptionChainID is less than 6, this function will append the new strikes to an existing option chain. There is also a limit on the number of strikes an option chain can contain (the limit is 5).</p>
         <h2>placeBuyOrder(uint optionChainID, uint optionID, uint price, uint size)</h2>
@@ -74,8 +72,8 @@
           <p>This function is used by orderMatchSell to match the new sell order with an existing buy order.</p>
         <h2>orderMatchSell(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint)</h2>
           <p>This function is used by orderMatchBuy to match the new buy order with an existing sell order.</p>
-        <h2>getTopLevel(uint optionChainID, uint optionID) private constant returns(TopLevel)</h2>
-          <p>This function gets the top level buy and sell price and returns it as a TopLevel structure with fields buyPrice, buySize, sellPrice, and sellSize.</p>
+        <h2>getTopLevel(uint optionChainID, uint optionID) private constant returns(uint, uint, uint, uint)</h2>
+          <p>This function gets the top level buy and sell price and returns buy price, buy size, sell price, and sell size.</p>
         <h2>cancelOrders()</h2>
           <p>This function cancels all the user's outstanding orders in all options.</p>
         <h2>getMaxLossAfterTrade(address user, uint optionChainID, uint optionID, int positionChange, int cashChange) constant returns(int)</h2>
