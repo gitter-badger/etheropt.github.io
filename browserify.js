@@ -181,25 +181,36 @@ Main.loadMarket = function() {
           var sellPrice = sellPrices[i].toNumber();
           var sellSize = sellSizes[i].toNumber();
           var result = undefined;
-          var option = Object();
-          option.strike = strike / 100.0;
-          option.optionChainID = optionChainID;
-          option.optionID = optionID;
-          option.cash = cash;
-          option.position = position;
-          option.id = id;
-          option.expiration = "2016-02-26";
-          option.fromcur = "ETH";
-          option.tocur = "USD";
-          option.buy_orders = [];
-          if (buySize>0) {
-            option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
-          }
-          option.sell_orders = [];
-          if (sellSize>0) {
-            option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
-          }
-          callback_map(null, option);
+          request.get('https://www.realitykeys.com/api/v1/exchange/'+id+'?accept_terms_of_service=current', function(err, httpResponse, body){
+            if (!err) {
+              result = JSON.parse(body);
+              var option = Object();
+              option.strike = strike / 100.0;
+              option.optionChainID = optionChainID;
+              option.optionID = optionID;
+              option.cash = cash;
+              option.position = position;
+              option.id = id;
+              option.expiration = result.settlement_date;
+              option.fromcur = result.fromcur;
+              option.tocur = result.tocur;
+              option.signed_hash = result.signature_v2.signed_hash;
+              option.signed_value = result.signature_v2.signed_value;
+              option.fact_hash = result.signature_v2.fact_hash;
+              option.sig_r = result.signature_v2.sig_r;
+              option.sig_s = result.signature_v2.sig_s;
+              option.sig_v = result.signature_v2.sig_v;
+              option.buy_orders = [];
+              if (buySize>0) {
+                option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
+              }
+              option.sell_orders = [];
+              if (sellSize>0) {
+                option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
+              }
+              callback_map(null, option);
+            }
+          });
         },
         function(err, options) {
           new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
