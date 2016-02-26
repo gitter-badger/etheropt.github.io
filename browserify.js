@@ -151,7 +151,7 @@ Main.loadFunds = function() {
 }
 Main.loadMarket = function() {
   $('#market-spinner').show();
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [addrs[selectedAddr]], function(result) {
+  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [], function(result) {
     var optionIDs = result[0];
     var strikes = result[1];
     var ids = result[2];
@@ -163,11 +163,26 @@ Main.loadMarket = function() {
       var sellPrices = result[2];
       var sellSizes = result[3];
       var is = [];
+      var optionChainIDs = [];
       for (var i=0; i<optionIDs.length; i++) {
         if (strikes[i]>0) {
           is.push(i);
+          var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
+          if (optionChainIDs.indexOf(optionChainID)<0) {
+            optionChainIDs.push(optionChainID);
+          }
         }
       }
+      var optionChainDescriptions = {};
+      optionChainIDs.forEach(function(optionChainID) {
+        utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionChain', [optionChainID], function(result) {
+          var expiration = (new Date(result[0].toNumber()*1000)).toISOString().substring(0,10);
+          var fromcur = result[1].split("/")[0];
+          var tocur = result[1].split("/")[1];
+          optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur};
+          optionChainDescriptions[optionChainID] = optionChainDescription;
+        });
+      });
       async.map(is,
         function(i, callback_map) {
           var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
@@ -180,37 +195,35 @@ Main.loadMarket = function() {
           var buySize = buySizes[i].toNumber();
           var sellPrice = sellPrices[i].toNumber();
           var sellSize = sellSizes[i].toNumber();
-          var result = undefined;
-          request.get('https://www.realitykeys.com/api/v1/exchange/'+id+'?accept_terms_of_service=current', function(err, httpResponse, body){
-            if (!err) {
-              result = JSON.parse(body);
-              var option = Object();
-              option.strike = strike / 100.0;
-              option.optionChainID = optionChainID;
-              option.optionID = optionID;
-              option.cash = cash;
-              option.position = position;
-              option.id = id;
-              option.expiration = result.settlement_date;
-              option.fromcur = result.fromcur;
-              option.tocur = result.tocur;
-              option.signed_hash = result.signature_v2.signed_hash;
-              option.signed_value = result.signature_v2.signed_value;
-              option.fact_hash = result.signature_v2.fact_hash;
-              option.sig_r = result.signature_v2.sig_r;
-              option.sig_s = result.signature_v2.sig_s;
-              option.sig_v = result.signature_v2.sig_v;
-              option.buy_orders = [];
-              if (buySize>0) {
-                option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
-              }
-              option.sell_orders = [];
-              if (sellSize>0) {
-                option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
-              }
+          var option = Object();
+          option.strike = strike / 100.0;
+          option.optionChainID = optionChainID;
+          option.optionID = optionID;
+          option.cash = cash;
+          option.position = position;
+          option.id = id;
+          option.buy_orders = [];
+          if (buySize>0) {
+            option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
+          }
+          option.sell_orders = [];
+          if (sellSize>0) {
+            option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
+          }
+          async.whilst(
+            function () { return !(optionChainID in optionChainDescriptions) },
+            function (callback) {
+                setTimeout(function () {
+                    callback(null);
+                }, 1000);
+            },
+            function (err) {
+              option.expiration = optionChainDescriptions[optionChainID].expiration;
+              option.fromcur = optionChainDescriptions[optionChainID].fromcur;
+              option.tocur = optionChainDescriptions[optionChainID].tocur;
               callback_map(null, option);
             }
-          });
+          );
         },
         function(err, options) {
           new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});

@@ -24,6 +24,8 @@ contract Market {
     bool hasPosition;
   }
   struct OptionChain {
+    uint expiration;
+    string underlying;
     mapping(uint => Option) options;
     uint numOptions;
     bool expired;
@@ -76,6 +78,10 @@ contract Market {
 
   function getFundsAndAvailable(address user) constant returns(int, int) {
     return (getFunds(user, false), getFunds(user, true));
+  }
+
+  function getOptionChain(uint optionChainID) constant returns (uint, string) {
+    return (optionChains[optionChainID].expiration, optionChains[optionChainID].underlying);
   }
 
   function getMarket(address user) constant returns(uint[], uint[], uint[], int[], int[]) {
@@ -151,7 +157,7 @@ contract Market {
     }
   }
 
-  function addOptionChain(uint existingOptionChainID, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs) {
+  function addOptionChain(uint existingOptionChainID, uint expiration, string underlying, uint[] ids, uint[] strikes, bytes32[] factHashes, address[] ethAddrs) {
     if (msg.sender==admin) {
       uint optionChainID = 6;
       if (numOptionChains<6) {
@@ -170,6 +176,8 @@ contract Market {
           delete optionChains[optionChainID];
         }
         OptionChain optionChain = optionChains[optionChainID];
+        optionChain.expiration = expiration;
+        optionChain.underlying = underlying;
         for (i=0; i < strikes.length; i++) {
           if (optionChain.numOptions<5) {
             uint optionID = optionChain.numOptions++;

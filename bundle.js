@@ -152,7 +152,7 @@ Main.loadFunds = function() {
 }
 Main.loadMarket = function() {
   $('#market-spinner').show();
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [addrs[selectedAddr]], function(result) {
+  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [], function(result) {
     var optionIDs = result[0];
     var strikes = result[1];
     var ids = result[2];
@@ -164,11 +164,26 @@ Main.loadMarket = function() {
       var sellPrices = result[2];
       var sellSizes = result[3];
       var is = [];
+      var optionChainIDs = [];
       for (var i=0; i<optionIDs.length; i++) {
         if (strikes[i]>0) {
           is.push(i);
+          var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
+          if (optionChainIDs.indexOf(optionChainID)<0) {
+            optionChainIDs.push(optionChainID);
+          }
         }
       }
+      var optionChainDescriptions = {};
+      optionChainIDs.forEach(function(optionChainID) {
+        utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionChain', [optionChainID], function(result) {
+          var expiration = (new Date(result[0].toNumber()*1000)).toISOString().substring(0,10);
+          var fromcur = result[1].split("/")[0];
+          var tocur = result[1].split("/")[1];
+          optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur};
+          optionChainDescriptions[optionChainID] = optionChainDescription;
+        });
+      });
       async.map(is,
         function(i, callback_map) {
           var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
@@ -181,37 +196,35 @@ Main.loadMarket = function() {
           var buySize = buySizes[i].toNumber();
           var sellPrice = sellPrices[i].toNumber();
           var sellSize = sellSizes[i].toNumber();
-          var result = undefined;
-          request.get('https://www.realitykeys.com/api/v1/exchange/'+id+'?accept_terms_of_service=current', function(err, httpResponse, body){
-            if (!err) {
-              result = JSON.parse(body);
-              var option = Object();
-              option.strike = strike / 100.0;
-              option.optionChainID = optionChainID;
-              option.optionID = optionID;
-              option.cash = cash;
-              option.position = position;
-              option.id = id;
-              option.expiration = result.settlement_date;
-              option.fromcur = result.fromcur;
-              option.tocur = result.tocur;
-              option.signed_hash = result.signature_v2.signed_hash;
-              option.signed_value = result.signature_v2.signed_value;
-              option.fact_hash = result.signature_v2.fact_hash;
-              option.sig_r = result.signature_v2.sig_r;
-              option.sig_s = result.signature_v2.sig_s;
-              option.sig_v = result.signature_v2.sig_v;
-              option.buy_orders = [];
-              if (buySize>0) {
-                option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
-              }
-              option.sell_orders = [];
-              if (sellSize>0) {
-                option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
-              }
+          var option = Object();
+          option.strike = strike / 100.0;
+          option.optionChainID = optionChainID;
+          option.optionID = optionID;
+          option.cash = cash;
+          option.position = position;
+          option.id = id;
+          option.buy_orders = [];
+          if (buySize>0) {
+            option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
+          }
+          option.sell_orders = [];
+          if (sellSize>0) {
+            option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
+          }
+          async.whilst(
+            function () { return !(optionChainID in optionChainDescriptions) },
+            function (callback) {
+                setTimeout(function () {
+                    callback(null);
+                }, 1000);
+            },
+            function (err) {
+              option.expiration = optionChainDescriptions[optionChainID].expiration;
+              option.fromcur = optionChainDescriptions[optionChainID].fromcur;
+              option.tocur = optionChainDescriptions[optionChainID].tocur;
               callback_map(null, option);
             }
-          });
+          );
         },
         function(err, options) {
           new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
@@ -31723,7 +31736,6 @@ var Tx = _dereq_('ethereumjs-tx');
 
 function roundToNearest(numToRound, numToRoundTo) {
     numToRoundTo = 1 / (numToRoundTo);
-
     return Math.round(numToRound * numToRoundTo) / numToRoundTo;
 }
 
@@ -54196,7 +54208,7 @@ module.exports = SolidityTypeBytes;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
+/**
  * @file coder.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @date 2015
@@ -54226,7 +54238,7 @@ var SolidityCoder = function (types) {
  *
  * @method _requireType
  * @param {String} type
- * @returns {SolidityType} 
+ * @returns {SolidityType}
  * @throws {Error} throws if no matching type is found
  */
 SolidityCoder.prototype._requireType = function (type) {
@@ -54274,7 +54286,7 @@ SolidityCoder.prototype.encodeParams = function (types, params) {
         return acc + roundedStaticPartLength;
     }, 0);
 
-    var result = this.encodeMultiWithOffset(types, solidityTypes, encodeds, dynamicOffset); 
+    var result = this.encodeMultiWithOffset(types, solidityTypes, encodeds, dynamicOffset);
 
     return result;
 };
@@ -54299,7 +54311,7 @@ SolidityCoder.prototype.encodeMultiWithOffset = function (types, solidityTypes, 
 
         // TODO: figure out nested arrays
     });
-    
+
     types.forEach(function (type, i) {
         if (isDynamic(i)) {
             var e = self.encodeWithOffset(types[i], solidityTypes[i], encodeds[i], dynamicOffset);
@@ -54319,7 +54331,7 @@ SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded
             var nestedName = solidityType.nestedName(type);
             var nestedStaticPartLength = solidityType.staticPartLength(nestedName);
             var result = encoded[0];
-            
+
             (function () {
                 var previousLength = 2; // in int
                 if (solidityType.isDynamicArray(nestedName)) {
@@ -54329,7 +54341,7 @@ SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded
                     }
                 }
             })();
-            
+
             // first element is length, skip it
             (function () {
                 for (var i = 0; i < encoded.length - 1; i++) {
@@ -54340,7 +54352,7 @@ SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded
 
             return result;
         })();
-       
+
     } else if (solidityType.isStaticArray(type)) {
         return (function () {
             var nestedName = solidityType.nestedName(type);
@@ -54353,7 +54365,7 @@ SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded
                     var previousLength = 0; // in int
                     for (var i = 0; i < encoded.length; i++) {
                         // calculate length of previous item
-                        previousLength += +(encoded[i - 1] || [])[0] || 0; 
+                        previousLength += +(encoded[i - 1] || [])[0] || 0;
                         result += f.formatInputInt(offset + i * nestedStaticPartLength + previousLength * 32).encode();
                     }
                 })();
@@ -54396,7 +54408,7 @@ SolidityCoder.prototype.decodeParam = function (type, bytes) {
 SolidityCoder.prototype.decodeParams = function (types, bytes) {
     var solidityTypes = this.getSolidityTypes(types);
     var offsets = this.getOffsets(types, solidityTypes);
-        
+
     return solidityTypes.map(function (solidityType, index) {
         return solidityType.decode(bytes, offsets[index],  types[index], index);
     });
@@ -54406,16 +54418,16 @@ SolidityCoder.prototype.getOffsets = function (types, solidityTypes) {
     var lengths =  solidityTypes.map(function (solidityType, index) {
         return solidityType.staticPartLength(types[index]);
     });
-    
+
     for (var i = 1; i < lengths.length; i++) {
          // sum with length of previous element
-        lengths[i] += lengths[i - 1]; 
+        lengths[i] += lengths[i - 1];
     }
 
     return lengths.map(function (length, index) {
         // remove the current length, so the length is sum of previous elements
         var staticPartLength = solidityTypes[index].staticPartLength(types[index]);
-        return length - staticPartLength; 
+        return length - staticPartLength;
     });
 };
 
@@ -54439,7 +54451,6 @@ var coder = new SolidityCoder([
 ]);
 
 module.exports = coder;
-
 
 },{"./address":178,"./bool":179,"./bytes":180,"./dynamicbytes":182,"./formatters":183,"./int":184,"./real":186,"./string":187,"./uint":189,"./ureal":190}],182:[function(_dereq_,module,exports){
 var f = _dereq_('./formatters');
@@ -55013,13 +55024,13 @@ SolidityType.prototype.staticPartLength = function (name) {
 
 /**
  * Should be used to determine if type is dynamic array
- * eg: 
+ * eg:
  * "type[]" => true
  * "type[4]" => false
  *
  * @method isDynamicArray
  * @param {String} name
- * @return {Bool} true if the type is dynamic array 
+ * @return {Bool} true if the type is dynamic array
  */
 SolidityType.prototype.isDynamicArray = function (name) {
     var nestedTypes = this.nestedTypes(name);
@@ -55028,13 +55039,13 @@ SolidityType.prototype.isDynamicArray = function (name) {
 
 /**
  * Should be used to determine if type is static array
- * eg: 
+ * eg:
  * "type[]" => false
  * "type[4]" => true
  *
  * @method isStaticArray
  * @param {String} name
- * @return {Bool} true if the type is static array 
+ * @return {Bool} true if the type is static array
  */
 SolidityType.prototype.isStaticArray = function (name) {
     var nestedTypes = this.nestedTypes(name);
@@ -55043,7 +55054,7 @@ SolidityType.prototype.isStaticArray = function (name) {
 
 /**
  * Should return length of static array
- * eg. 
+ * eg.
  * "int[32]" => 32
  * "int256[14]" => 14
  * "int[2][3]" => 3
@@ -55118,7 +55129,7 @@ SolidityType.prototype.nestedTypes = function (name) {
  * Should be used to encode the value
  *
  * @method encode
- * @param {Object} value 
+ * @param {Object} value
  * @param {String} name
  * @return {String} encoded value
  */
@@ -55132,11 +55143,9 @@ SolidityType.prototype.encode = function (value, name) {
 
             var result = [];
             result.push(f.formatInputInt(length).encode());
-            
             value.forEach(function (v) {
                 result.push(self.encode(v, nestedName));
             });
-
             return result;
         })();
 
@@ -55208,12 +55217,12 @@ SolidityType.prototype.decode = function (bytes, offset, name) {
             return result;
         })();
     } else if (this.isDynamicType(name)) {
-        
+
         return (function () {
             var dynamicOffset = parseInt('0x' + bytes.substr(offset * 2, 64));      // in bytes
             var length = parseInt('0x' + bytes.substr(dynamicOffset * 2, 64));      // in bytes
             var roundedLength = Math.floor((length + 31) / 32);                     // in int
-        
+
             return self._outputFormatter(new SolidityParam(bytes.substr(dynamicOffset * 2, ( 1 + roundedLength) * 64), 0));
         })();
     }

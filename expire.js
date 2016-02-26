@@ -30,11 +30,26 @@ if (cli_options.help) {
 	    var positions = result[3];
 	    var cashes = result[4];
       var is = [];
-      for (var i=0; i<optionIDs.length; i++) {
-        if (strikes[i]>0) {
-          is.push(i);
-        }
-      }
+			var optionChainIDs = [];
+			for (var i=0; i<optionIDs.length; i++) {
+				if (strikes[i]>0) {
+					is.push(i);
+					var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
+					if (optionChainIDs.indexOf(optionChainID)<0) {
+						optionChainIDs.push(optionChainID);
+					}
+				}
+			}
+			var optionChainDescriptions = {};
+			optionChainIDs.forEach(function(optionChainID) {
+				utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionChain', [optionChainID], function(result) {
+					var expiration = (new Date(result[0].toNumber()*1000)).toISOString().substring(0,10);
+					var fromcur = result[1].split("/")[0];
+					var tocur = result[1].split("/")[1];
+					optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur};
+					optionChainDescriptions[optionChainID] = optionChainDescription;
+				});
+			})
       async.map(is,
         function(i, callback_map) {
           var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
@@ -54,16 +69,26 @@ if (cli_options.help) {
               option.cash = cash;
               option.position = position;
               option.id = id;
-              option.expiration = result.settlement_date;
-              option.fromcur = result.fromcur;
-              option.tocur = result.tocur;
               option.signed_hash = result.signature_v2.signed_hash;
               option.signed_value = result.signature_v2.signed_value;
               option.fact_hash = result.signature_v2.fact_hash;
               option.sig_r = result.signature_v2.sig_r;
               option.sig_s = result.signature_v2.sig_s;
               option.sig_v = result.signature_v2.sig_v;
-              callback_map(null, option);
+							async.whilst(
+								function () { return !(optionChainID in optionChainDescriptions) },
+								function (callback) {
+										setTimeout(function () {
+												callback(null);
+										}, 1000);
+								},
+								function (err) {
+									option.expiration = optionChainDescriptions[optionChainID].expiration;
+									option.fromcur = optionChainDescriptions[optionChainID].fromcur;
+									option.tocur = optionChainDescriptions[optionChainID].tocur;
+									callback_map(null, option);
+								}
+							);
             }
           });
         },
@@ -80,7 +105,7 @@ if (cli_options.help) {
 							var r = relatedOptions.map(function(x){return '0x'+x.sig_r});
 							var s = relatedOptions.map(function(x){return '0x'+x.sig_s});
 							var value = relatedOptions.map(function(x){return x.signed_value});
-							console.log("Should expire");
+							console.log("Should expire, settlement:", value);
 							if (cli_options.armed) {
 								console.log("Expiring");
 								utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [0, optionChainID, v, r, s, value, {gas: 3141592, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
