@@ -8,6 +8,8 @@ var coder = require('web3/lib/solidity/coder.js');
 var utils = require('web3/lib/utils/utils.js');
 var sha3 = require('web3/lib/utils/sha3.js');
 var Tx = require('ethereumjs-tx');
+var keythereum = require('keythereum');
+var ethUtil = require('ethereumjs-util');
 
 function roundToNearest(numToRound, numToRoundTo) {
     numToRoundTo = 1 / (numToRoundTo);
@@ -161,6 +163,20 @@ function proxySend(web3, contract, address, functionName, args, fromAddress, pri
   }
 }
 
+function createAddress() {
+  var dk = keythereum.create();
+  var pk = dk.privateKey;
+  var addr = ethUtil.privateToAddress(pk);
+  return [addr, pk];
+}
+
+function verifyPrivateKey(addr, privateKey) {
+  if (privateKey && privateKey.substring(0,2)!='0x') {
+    privateKey = '0x'+privateKey;
+  }
+  return addr == '0x'+ethUtil.privateToAddress(privateKey).toString('hex');
+}
+
 function diffs(data) {
   var result = [];
   for (var i=1; i<data.length; i++) {
@@ -266,6 +282,8 @@ exports.mean = mean;
 exports.proxyGetBalance = proxyGetBalance;
 exports.proxySend = proxySend;
 exports.proxyCall = proxyCall;
+exports.createAddress = createAddress;
+exports.verifyPrivateKey = verifyPrivateKey;
 exports.readFile = readFile;
 exports.writeFile = writeFile;
 exports.roundTo = roundTo;

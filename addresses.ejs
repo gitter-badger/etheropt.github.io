@@ -5,8 +5,14 @@
       <% addresses.forEach(function(address, i, array) { %>
         <li><a href="#" onclick="bundle.Main.selectAddress(<%= i%>);"><%= address.addr %> <span class="badge"><%= bundle.utility.weiToEth(address.balance) %> eth</span></a></li>
       <% }); %>
-      <li><a href="#" data-toggle="modal" data-target="#address_modal">Add address</a></li>
-      <li><a href="#" onclick="bundle.Main.logout()">Log out</a></li>
+      <li>
+        <a onclick="bundle.Main.shapeshift_click(this, event);" href="https://shapeshift.io/shifty.html?destination=<%= addresses[selectedAddr].addr%>&amp;output=ETH&amp;amount=">Deposit with ShapeShift.io</a>
+      </li>
+      <li><a href="#" data-toggle="modal" data-target="#address_modal">Add existing account</a></li>
+      <li><a href="#" onclick="bundle.Main.createAddress()">Create new account</a></li>
+      <li><a href="#" onclick="bundle.Main.showPrivateKey()">Export private key</a></li>
+      <li><a href="#" onclick="bundle.Main.deleteAddress()">Forget current account</a></li>
+      <li><a href="#" onclick="bundle.Main.logout()">Forget all accounts</a></li>
     </ul>
   </li>
 </ul>

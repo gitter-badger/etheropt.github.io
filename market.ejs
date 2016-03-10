@@ -1,8 +1,7 @@
-<% options.sort(function(a,b){ return a.expiration<b.expiration || a.expiration==b.expiration && a.strike<b.strike ? -1 : 1 }); %>
 <% expiration_pairs = options.map(function(x){return x.expiration+" "+x.fromcur+"/"+x.tocur}).getUnique() %>
 <table class="table table-hover">
   <tr>
-    <th>Expiration/Strike</th>
+    <th></th>
     <th>Best bid</th>
     <th>Best offer</th>
     <th>My position</th>
@@ -10,14 +9,14 @@
   <% expiration_pairs.forEach(function(expiration_pair) { %>
     <% filtered_options = options.filter(function(x){return x.expiration+" "+x.fromcur+"/"+x.tocur==expiration_pair}) %>
       <tr>
-        <td><strong><%= expiration_pair %></strong></td>
+        <td><strong><%= expiration_pair %> <br />(margin requirement: <%= filtered_options[0].margin %>)</strong></td>
         <td></td>
         <td></td>
         <td>Cash: <%= bundle.utility.weiToEth(filtered_options[0].cash) %> eth</td>
       </tr>
       <% filtered_options.forEach(function(option){ %>
         <tr>
-          <td><%= option.strike %></td>
+          <td><%= option.strike %> <%= option.kind %></td>
           <td>
             <%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4)+" ("+bundle.utility.weiToEth(option.buy_orders[0].size)+" eth)" : "N/A" %>
             <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#sell_modal" data-optionchainid="<%= option.optionChainID%>" data-optionid="<%= option.optionID%>" data-price="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4) : "" %>" data-size="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.weiToEth(option.buy_orders[0].size) : "" %>" data-description="<%= option.expiration+" "+option.fromcur+"/"+option.tocur+" "+option.strike %>">Sell</button>

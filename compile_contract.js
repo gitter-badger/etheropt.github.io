@@ -12,7 +12,7 @@ var code = compiled.Market.code;
 var abi = compiled.Market.info.abiDefinition;
 web3.eth.defaultAccount = config.eth_addr;
 var myContract = web3.eth.contract(abi);
-myContract.new({data: code, gas: 3141592}, function (err, contract) {
+myContract.new(config.eth_addr, {data: code, gas: 3141592}, function (err, contract) {
 	if(err) {
 		console.error(err);
 	} else if(contract.address){

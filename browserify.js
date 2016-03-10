@@ -8,6 +8,7 @@ function Main() {
 //functions
 Main.alertInfo = function(message) {
   $('#alerts').append('<div class="alert alert-info"><button type="button" class="close" data-dismiss="alert">&times;</button>' + message + '</div>');
+  console.log(message);
 }
 Main.alertTxHash = function(txHash) {
   Main.alertInfo('You just created an Ethereum transaction. Track its progress here: <a href="http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io/tx/'+txHash+'" target="_blank">'+txHash+'</a>.');
@@ -65,9 +66,21 @@ Main.logout = function() {
   selectedAddr = 0;
   Main.refresh();
 }
+Main.createAddress = function() {
+  var newAddress = utility.createAddress();
+  var addr = '0x'+newAddress[0].toString('hex');
+  var pk = '0x'+newAddress[1].toString('hex');
+  Main.addAddress(addr, pk);
+}
+Main.deleteAddress = function() {
+  addrs.splice(selectedAddr, 1);
+  pks.splice(selectedAddr, 1);
+  selectedAddr = 0;
+  Main.refresh();
+}
 Main.buy = function(optionChainID, optionID, price, size) {
   size = utility.ethToWei(size);
-  price = price * 10000;
+  price = price * 1000000000000000000;
   utility.proxySend(web3, myContract, config.contract_market_addr, 'placeBuyOrder', [optionChainID, optionID, price, size, {gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
     txHash = result[0];
     nonce = result[1];
@@ -76,7 +89,7 @@ Main.buy = function(optionChainID, optionID, price, size) {
 }
 Main.sell = function(optionChainID, optionID, price, size) {
   size = utility.ethToWei(size);
-  price = price * 10000;
+  price = price * 1000000000000000000;
   utility.proxySend(web3, myContract, config.contract_market_addr, 'placeSellOrder', [optionChainID, optionID, price, size, {gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
     txHash = result[0];
     nonce = result[1];
@@ -88,10 +101,31 @@ Main.selectAddress = function(i) {
   Main.refresh();
 }
 Main.addAddress = function(addr, pk) {
-  addrs.push(addr);
-  pks.push(pk);
-  selectedAddr = addrs.length-1;
-  Main.refresh();
+  if (pk!=undefined && pk!='' && !utility.verifyPrivateKey(addr, pk)) {
+    Main.alertInfo('For account '+addr+' , the private key is invalid.');
+  } else if (!web3.isAddress(addr)) {
+    Main.alertInfo('The specified address, '+addr+', is invalid.');    
+  } else {
+    addrs.push(addr);
+    pks.push(pk);
+    selectedAddr = addrs.length-1;
+    Main.refresh();
+  }
+}
+Main.showPrivateKey = function() {
+  var addr = addrs[selectedAddr];
+  var pk = pks[selectedAddr];
+  if (pk==undefined || pk=='') {
+    Main.alertInfo('For account '+addr+', there is no private key available. You can still transact if you are connected to Geth and the account is unlocked.');
+  } else {
+    Main.alertInfo('For account '+addr+', the private key is '+pk);
+  }
+}
+Main.shapeshift_click = function(a,e) {
+  e.preventDefault();
+  var link=a.href;
+  window.open(link,'1418115287605','width=700,height=500,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=0,left=0,top=0');
+  return false;
 }
 Main.fund = function(amount) {
   utility.proxySend(web3, myContract, config.contract_market_addr, 'addFunds', [{gas: 1000000, value: utility.ethToWei(amount)}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
@@ -123,6 +157,7 @@ Main.connectionTest = function() {
   } catch(err) {
     connection = {connection: 'Proxy', provider: 'http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io', testnet: config.eth_testnet};
   }
+  connection.contract = '<a href="http://'+(config.eth_testnet ? 'testnet.' : '')+'etherscan.io/address/'+config.contract_market_addr+'" target="_blank">'+config.contract_market_addr+'</a>';
   new EJS({url: config.home_url+'/'+'connection.ejs'}).update('connection', {connection: connection});
   Main.popovers();
   return connection;
@@ -130,6 +165,11 @@ Main.connectionTest = function() {
 Main.loadAddresses = function() {
   if (Main.connectionTest().connection=='Geth') {
     $('#pk_div').hide();
+  }
+  if (addrs.length<=0 || addrs.length!=pks.length) {
+    addrs = [config.eth_addr];
+    pks = [config.eth_addr_pk];
+    selectedAddr = 0;
   }
   async.map(addrs,
     function(addr, callback) {
@@ -151,64 +191,68 @@ Main.loadFunds = function() {
 }
 Main.loadMarket = function() {
   $('#market-spinner').show();
-  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [], function(result) {
+  utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarket', [addrs[selectedAddr]], function(result) {
     var optionIDs = result[0];
     var strikes = result[1];
-    var ids = result[2];
-    var positions = result[3];
-    var cashes = result[4];
+    var positions = result[2];
+    var cashes = result[3];
+    var is = [];
+    var optionChainIDs = [];
+    for (var i=0; i<optionIDs.length; i++) {
+      if (strikes[i]!=0) {
+        is.push(i);
+        var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
+        if (optionChainIDs.indexOf(optionChainID)<0) {
+          optionChainIDs.push(optionChainID);
+        }
+      }
+    }
+    var optionChainDescriptions = {};
+    optionChainIDs.forEach(function(optionChainID) {
+      utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionChain', [optionChainID], function(result) {
+        var expiration = (new Date(result[0].toNumber()*1000)).toISOString().substring(0,10);
+        var fromcur = result[1].split("/")[0];
+        var tocur = result[1].split("/")[1];
+        var margin = result[2].toNumber() / 1000000000000000000.0;
+        var realityID = result[3].toNumber();
+				optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur, margin: margin, realityID: realityID};
+        optionChainDescriptions[optionChainID] = optionChainDescription;
+      });
+    });
     utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketTopLevels', [], function(result) {
       var buyPrices = result[0];
       var buySizes = result[1];
       var sellPrices = result[2];
       var sellSizes = result[3];
-      var is = [];
-      var optionChainIDs = [];
-      for (var i=0; i<optionIDs.length; i++) {
-        if (strikes[i]>0) {
-          is.push(i);
-          var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
-          if (optionChainIDs.indexOf(optionChainID)<0) {
-            optionChainIDs.push(optionChainID);
-          }
-        }
-      }
-      var optionChainDescriptions = {};
-      optionChainIDs.forEach(function(optionChainID) {
-        utility.proxyCall(web3, myContract, config.contract_market_addr, 'getOptionChain', [optionChainID], function(result) {
-          var expiration = (new Date(result[0].toNumber()*1000)).toISOString().substring(0,10);
-          var fromcur = result[1].split("/")[0];
-          var tocur = result[1].split("/")[1];
-          optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur};
-          optionChainDescriptions[optionChainID] = optionChainDescription;
-        });
-      });
       async.map(is,
         function(i, callback_map) {
           var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
           var optionID = optionIDs[i].toNumber() % 1000;
-          var id = ids[i].toNumber();
-          var strike = strikes[i].toNumber();
-          var cash = cashes[i].toNumber();
+          var strike = strikes[i].toNumber() / 1000000000000000000;
+          var cash = cashes[i].toNumber() / 1000000000000000000;
           var position = positions[i].toNumber();
-          var buyPrice = buyPrices[i].toNumber();
+          var buyPrice = buyPrices[i].toNumber() / 1000000000000000000;
           var buySize = buySizes[i].toNumber();
-          var sellPrice = sellPrices[i].toNumber();
+          var sellPrice = sellPrices[i].toNumber() / 1000000000000000000;
           var sellSize = sellSizes[i].toNumber();
           var option = Object();
-          option.strike = strike / 100.0;
+          if (strike>0) {
+            option.kind = 'Call';
+          } else {
+            option.kind = 'Put';
+          }
+          option.strike = Math.abs(strike);
           option.optionChainID = optionChainID;
           option.optionID = optionID;
           option.cash = cash;
           option.position = position;
-          option.id = id;
           option.buy_orders = [];
           if (buySize>0) {
-            option.buy_orders.push({price: buyPrice / 10000.0, size: buySize});
+            option.buy_orders.push({price: buyPrice, size: buySize});
           }
           option.sell_orders = [];
           if (sellSize>0) {
-            option.sell_orders.push({price: sellPrice / 10000.0, size: sellSize});
+            option.sell_orders.push({price: sellPrice, size: sellSize});
           }
           async.whilst(
             function () { return !(optionChainID in optionChainDescriptions) },
@@ -221,11 +265,13 @@ Main.loadMarket = function() {
               option.expiration = optionChainDescriptions[optionChainID].expiration;
               option.fromcur = optionChainDescriptions[optionChainID].fromcur;
               option.tocur = optionChainDescriptions[optionChainID].tocur;
+              option.margin = optionChainDescriptions[optionChainID].margin;
               callback_map(null, option);
             }
           );
         },
         function(err, options) {
+          options.sort(function(a,b){ return a.expiration<b.expiration || (a.expiration==b.expiration && a.strike<b.strike ? -1 : 1 && a.kind<b.kind) });
           new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
           $('#market-spinner').hide();
           Main.tooltips();
@@ -243,9 +289,6 @@ Main.refresh = function() {
 }
 
 //globals
-var addrs = [config.eth_addr];
-var pks = [config.eth_addr_pk];
-var selectedAddr = 0;
 var cookie = Main.readCookie("user");
 if (cookie) {
   cookie = JSON.parse(cookie);
