@@ -1,5 +1,5 @@
 var config = require('./config.js');
-var utility = require('../etheropt/utility.js');
+var utility = require('../etheropt.github.io/utility.js');
 var Web3 = require('web3');
 var request = require('request');
 var commandLineArgs = require('command-line-args');
@@ -54,15 +54,17 @@ if (cli_options.help) {
 							var sig_r = '0x'+result.signature_v2.sig_r;
 							var sig_s = '0x'+result.signature_v2.sig_s;
 							var sig_v = result.signature_v2.sig_v;
+							console.log(result);
 							var settlement = result.winner_value;
-							if (true || sig_r && sig_s && sig_v && value) {
+							if (sig_r && sig_s && sig_v && value) {
 								console.log("Should expire "+expiration+", settlement:", settlement);
 								if (cli_options.armed) {
 									console.log("Expiring");
 									var nonce = undefined;
-									utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [0, optionChainID, v, r, s, value, {gas: 3141592, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
+									utility.proxySend(web3, myContract, config.contract_market_addr, 'expire', [0, optionChainID, sig_v, sig_r, sig_s, value, {gas: 3141592, value: 0}], config.eth_addr, config.eth_addr_pk, nonce, function(result) {
 										txHash = result[0];
 										nonce = result[1];
+										console.log(txHash);
 									});
 								}
 							}

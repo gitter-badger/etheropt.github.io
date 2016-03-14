@@ -381,7 +381,7 @@ contract Market {
   function getMaxLossAfterTrade(address user, uint optionChainID, uint optionID, int positionChange, int cashChange) constant returns(int) {
     int totalMaxLoss = 0;
     for (uint i=0; i<numOptionChains; i++) {
-      if (optionChains[i].expired == false && optionChains[i].numOptions>0) {
+      if (optionChains[i].positions[user].expired == false && optionChains[i].numOptions>0) {
         bool maxLossInitialized = false;
         int maxLoss = 0;
         for (uint s=0; s<optionChains[i].numOptions; s++) {

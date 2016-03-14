@@ -82,7 +82,7 @@ Main.deleteAddress = function() {
 Main.buy = function(optionChainID, optionID, price, size) {
   size = utility.ethToWei(size);
   price = price * 1000000000000000000;
-  utility.proxySend(web3, myContract, config.contract_market_addr, 'placeBuyOrder', [optionChainID, optionID, price, size, {gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+  utility.proxySend(web3, myContract, config.contract_market_addr, 'placeBuyOrder', [optionChainID, optionID, price, size, {gas: 2000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
     txHash = result[0];
     nonce = result[1];
     Main.alertTxHash(txHash);
@@ -91,7 +91,7 @@ Main.buy = function(optionChainID, optionID, price, size) {
 Main.sell = function(optionChainID, optionID, price, size) {
   size = utility.ethToWei(size);
   price = price * 1000000000000000000;
-  utility.proxySend(web3, myContract, config.contract_market_addr, 'placeSellOrder', [optionChainID, optionID, price, size, {gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+  utility.proxySend(web3, myContract, config.contract_market_addr, 'placeSellOrder', [optionChainID, optionID, price, size, {gas: 2000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
     txHash = result[0];
     nonce = result[1];
     Main.alertTxHash(txHash);
@@ -105,7 +105,7 @@ Main.addAddress = function(addr, pk) {
   if (pk!=undefined && pk!='' && !utility.verifyPrivateKey(addr, pk)) {
     Main.alertInfo('For account '+addr+' , the private key is invalid.');
   } else if (!web3.isAddress(addr)) {
-    Main.alertInfo('The specified address, '+addr+', is invalid.');    
+    Main.alertInfo('The specified address, '+addr+', is invalid.');
   } else {
     addrs.push(addr);
     pks.push(pk);
@@ -272,7 +272,7 @@ Main.loadMarket = function() {
           );
         },
         function(err, options) {
-          options.sort(function(a,b){ return a.expiration<b.expiration || (a.expiration==b.expiration && a.strike<b.strike ? -1 : 1 && a.kind<b.kind) });
+          options.sort(function(a,b){ return a.expiration+a.strike.toFixed(3).toString()+a.kind<b.expiration+b.strike.toFixed(3).toString()+b.kind ? -1 : 1 });
           new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
           $('#market-spinner').hide();
           Main.tooltips();
@@ -325,7 +325,7 @@ config.contract_market = 'market.sol';
 config.contract_market_addr = 'TBD';
 config.eth_testnet = false;
 config.eth_provider = 'http://localhost:8545';
-config.eth_addr = '0x0000000000000000000000000000000000000000';
+config.eth_addr = '0x18e79a47d8a58bef5aaecbba85ea1420649c64a8';
 config.eth_addr_pk = '';
 
 try {
