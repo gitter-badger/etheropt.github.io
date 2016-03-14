@@ -1,7 +1,7 @@
 var config = {};
 
 config.home_url = 'http://etherboost.github.io/etheropt';
-config.home_url = 'http://localhost:8080';
+// config.home_url = 'http://localhost:8080';
 config.contract_market = 'market.sol';
 config.contract_market_addr = '0xdf522dd219834374990e5306425bf262c9742925';
 config.eth_testnet = true;
