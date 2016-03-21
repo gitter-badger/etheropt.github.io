@@ -6,16 +6,13 @@ body, html {
 #header {
   width: 100%;
   font-size: 2em;
-  height: 100px;
+  height: 80px;
   padding: 0;
-}
-#header .helper {
-  display: inline-block;
-  height: 100%;
-  vertical-align: middle;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 #header img {
-  height: 60px;
+  height: 80px;
   vertical-align: middle;
 }
 

@@ -23,13 +23,11 @@ $(function () {
     $('body').on('click', '#buy_submit', function (e) {
         e.preventDefault();
         $('#buy_modal').modal('hide');
-        bundle.Main.buy($('#buy_optionChainID').val(), $('#buy_optionID').val(), $('#buy_price').val(), $('#buy_size').val());
+        bundle.Main.buy($('#buy_order').val(), $('#buy_price').val(), $('#buy_size').val());
     });
     $('#buy_modal').on('show.bs.modal', function(e) {
-        var optionChainID = $(e.relatedTarget).data('optionchainid');
-        $(e.currentTarget).find('input[id="buy_optionChainID"]').val(optionChainID);
-        var optionID = $(e.relatedTarget).data('optionid');
-        $(e.currentTarget).find('input[id="buy_optionID"]').val(optionID);
+        var order = JSON.stringify($(e.relatedTarget).data('order'));
+        $(e.currentTarget).find('input[id="buy_order"]').val(order);
         var price = $(e.relatedTarget).data('price');
         $(e.currentTarget).find('input[id="buy_price"]').val(price);
         var size = $(e.relatedTarget).data('size');
@@ -42,13 +40,11 @@ $(function () {
     $('body').on('click', '#sell_submit', function (e) {
         e.preventDefault();
         $('#sell_modal').modal('hide');
-        bundle.Main.sell($('#sell_optionChainID').val(), $('#sell_optionID').val(), $('#sell_price').val(), $('#sell_size').val());
+        bundle.Main.sell($('#sell_order').val(), $('#sell_price').val(), $('#sell_size').val());
     });
     $('#sell_modal').on('show.bs.modal', function(e) {
-        var optionChainID = $(e.relatedTarget).data('optionchainid');
-        $(e.currentTarget).find('input[id="sell_optionChainID"]').val(optionChainID);
-        var optionID = $(e.relatedTarget).data('optionid');
-        $(e.currentTarget).find('input[id="sell_optionID"]').val(optionID);
+        var order = JSON.stringify($(e.relatedTarget).data('order'));
+        $(e.currentTarget).find('input[id="sell_order"]').val(order);
         var price = $(e.relatedTarget).data('price');
         $(e.currentTarget).find('input[id="sell_price"]').val(price);
         var size = $(e.relatedTarget).data('size');

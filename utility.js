@@ -10,6 +10,7 @@ var sha3 = require('web3/lib/utils/sha3.js');
 var Tx = require('ethereumjs-tx');
 var keythereum = require('keythereum');
 var ethUtil = require('ethereumjs-util');
+var BigNumber = require('bignumber.js');
 
 function roundToNearest(numToRound, numToRoundTo) {
     numToRoundTo = 1 / (numToRoundTo);
@@ -163,6 +164,26 @@ function proxySend(web3, contract, address, functionName, args, fromAddress, pri
   }
 }
 
+function sign(web3, address, value, privateKey) {
+  if (typeof(privateKey) != 'undefined') {
+    if (privateKey.substring(0,2)=='0x') {
+      privateKey = privateKey.substring(2,privateKey.length);
+    }
+  	var sig = ethUtil.ecsign(new Buffer(value, 'hex'), new Buffer(privateKey, 'hex'));
+    var r = '0x'+sig.r.toString('hex');
+    var s = '0x'+sig.s.toString('hex');
+    var v = sig.v;
+    return {r: r, s: s, v: v};
+  } else {
+    var sig = web3.eth.sign(address, value);
+    var r = sig.slice(0, 66);
+    var s = '0x' + sig.slice(66, 130);
+    var v = web3.toDecimal('0x' + sig.slice(130, 132));
+    if (v!=27 && v!=28) v+=27;
+    return {r: r, s: s, v: v};
+  }
+}
+
 function createAddress() {
   var dk = keythereum.create();
   var pk = dk.privateKey;
@@ -212,7 +233,122 @@ function random_hex(n) {
     for( var i=0; i < n; i++ )
         text += possible.charAt(Math.floor(Math.random() * possible.length));
     return text;
-};
+}
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function zero_pad(num, places) {
+  var zero = places - num.toString().length + 1;
+  return Array(+(zero > 0 && zero)).join("0") + num;
+}
+
+function dec_to_hex(decStr, length) {
+  if (typeof(length)==='undefined') length = 32;
+  if (decStr < 0) {
+    // return convert_base((Math.pow(2, length) + decStr).toString(), 10, 16);
+    return (new BigNumber(2)).pow(length).add(new BigNumber(decStr)).toString(16);
+  } else {
+    return convert_base(decStr.toString(), 10, 16);
+  }
+}
+
+function hex_to_dec(hexStr, length) { //length implies this is a two's complement number
+  if (hexStr.substring(0, 2) === '0x') hexStr = hexStr.substring(2);
+  hexStr = hexStr.toLowerCase();
+  if (typeof(length)==='undefined'){
+    return convert_base(hexStr, 16, 10);
+  } else {
+    var max = Math.pow(2, length);
+    var answer = convert_base(hexStr, 16, 10);
+    if (answer>max/2) {
+      answer -= max;
+    }
+    return answer;
+  }
+}
+
+function pack(data, lengths) {
+  packed = "";
+  for (var i=0; i<lengths.length; i++) {
+    packed += zero_pad(dec_to_hex(data[i], lengths[i]), lengths[i]/4);
+  }
+  return packed;
+}
+
+function unpack(str, lengths) {
+  var data = [];
+  var length = 0;
+  for (var i=0; i<lengths.length; i++) {
+    data[i] = parseInt(hex_to_dec(str.substr(length,lengths[i]/4), lengths[i]));
+    length += lengths[i]/4;
+  }
+  return data;
+}
+
+function convert_base(str, fromBase, toBase) {
+  var digits = parse_to_digits_array(str, fromBase);
+  if (digits === null) return null;
+  var outArray = [];
+  var power = [1];
+  for (var i = 0; i < digits.length; i++) {
+    if (digits[i]) {
+      outArray = add(outArray, multiply_by_number(digits[i], power, toBase), toBase);
+    }
+    power = multiply_by_number(fromBase, power, toBase);
+  }
+  var out = '';
+  for (var i = outArray.length - 1; i >= 0; i--) {
+    out += outArray[i].toString(toBase);
+  }
+  return out;
+}
+
+function parse_to_digits_array(str, base) {
+  var digits = str.split('');
+  var ary = [];
+  for (var i = digits.length - 1; i >= 0; i--) {
+    var n = parseInt(digits[i], base);
+    if (isNaN(n)) return null;
+    ary.push(n);
+  }
+  return ary;
+}
+
+function add(x, y, base) {
+  var z = [];
+  var n = Math.max(x.length, y.length);
+  var carry = 0;
+  var i = 0;
+  while (i < n || carry) {
+    var xi = i < x.length ? x[i] : 0;
+    var yi = i < y.length ? y[i] : 0;
+    var zi = carry + xi + yi;
+    z.push(zi % base);
+    carry = Math.floor(zi / base);
+    i++;
+  }
+  return z;
+}
+
+function multiply_by_number(num, x, base) {
+  if (num < 0) return null;
+  if (num == 0) return [];
+
+  var result = [];
+  var power = x;
+  while (true) {
+    if (num & 1) {
+      result = add(result, power, base);
+    }
+    num = num >> 1;
+    if (num === 0) break;
+    power = add(power, power, base);
+  }
+
+  return result;
+}
 
 if (!Array.prototype.find) {
   Array.prototype.find = function(predicate) {
@@ -273,6 +409,24 @@ Array.prototype.getUnique = function(){
    return a;
 }
 
+Array.prototype.max = function() {
+  return Math.max.apply(null, this);
+};
+
+Array.prototype.min = function() {
+  return Math.min.apply(null, this);
+};
+
+exports.add = add;
+exports.multiply_by_number = multiply_by_number;
+exports.parse_to_digits_array = parse_to_digits_array;
+exports.convert_base = convert_base;
+exports.zero_pad = zero_pad;
+exports.hex_to_dec = hex_to_dec;
+exports.dec_to_hex = dec_to_hex;
+exports.pack = pack;
+exports.unpack = unpack;
+exports.getRandomInt = getRandomInt;
 exports.random_hex = random_hex;
 exports.rets = rets;
 exports.diffs = diffs;
@@ -282,6 +436,7 @@ exports.mean = mean;
 exports.proxyGetBalance = proxyGetBalance;
 exports.proxySend = proxySend;
 exports.proxyCall = proxyCall;
+exports.sign = sign;
 exports.createAddress = createAddress;
 exports.verifyPrivateKey = verifyPrivateKey;
 exports.readFile = readFile;

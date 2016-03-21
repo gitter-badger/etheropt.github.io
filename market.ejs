@@ -1,7 +1,7 @@
 <% expiration_pairs = options.map(function(x){return x.expiration+" "+x.fromcur+"/"+x.tocur}).getUnique() %>
 <table class="table table-hover">
   <tr>
-    <th></th>
+    <th>Option</th>
     <th>Best bid</th>
     <th>Best offer</th>
     <th>My position</th>
@@ -19,11 +19,11 @@
           <td><%= option.strike %> <%= option.kind %></td>
           <td>
             <%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4)+" ("+bundle.utility.weiToEth(option.buy_orders[0].size)+" eth)" : "N/A" %>
-            <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#sell_modal" data-optionchainid="<%= option.optionChainID%>" data-optionid="<%= option.optionID%>" data-price="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4) : "" %>" data-size="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.weiToEth(option.buy_orders[0].size) : "" %>" data-description="<%= option.expiration+" "+option.fromcur+"/"+option.tocur+" "+option.strike %>">Sell</button>
+            <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#sell_modal" data-price="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.roundTo(option.buy_orders[0].price,4) : "" %>" data-size="<%= option.buy_orders && option.buy_orders.length>0 ? bundle.utility.weiToEth(option.buy_orders[0].size) : "" %>" data-description="<%= option.expiration+" "+option.fromcur+"/"+option.tocur+" "+option.strike+" "+option.kind %>" data-order='<%= option.buy_orders && option.buy_orders.length>0 ? JSON.stringify(option.buy_orders[0].order) : '' %>'>Sell</button>
           </td>
           <td>
             <%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.roundTo(option.sell_orders[0].price,4)+" ("+bundle.utility.weiToEth(option.sell_orders[0].size)+" eth)" : "N/A" %>
-            <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#buy_modal" data-optionchainid="<%= option.optionChainID%>" data-optionid="<%= option.optionID%>" data-price="<%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.roundTo(option.sell_orders[0].price,4) : "" %>" data-size="<%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.weiToEth(option.sell_orders[0].size) : "" %>" data-description="<%= option.expiration+" "+option.fromcur+"/"+option.tocur+" "+option.strike %>">Buy</button>
+            <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#buy_modal" data-price="<%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.roundTo(option.sell_orders[0].price,4) : "" %>" data-size="<%= option.sell_orders && option.sell_orders.length>0 ? bundle.utility.weiToEth(option.sell_orders[0].size) : "" %>" data-description="<%= option.expiration+" "+option.fromcur+"/"+option.tocur+" "+option.strike+" "+option.kind %>" data-order='<%= option.sell_orders && option.sell_orders.length>0 ? JSON.stringify(option.sell_orders[0].order) : '' %>'>Buy</button>
           </td>
           <td>
             <%= bundle.utility.weiToEth(option.position) %> eth
@@ -31,11 +31,4 @@
         </tr>
       <% }); %>
   <% }); %>
-  <tr>
-    <td colspan="3">
-    </td>
-    <td>
-      <button type="button" class="btn btn-default" onclick="bundle.Main.cancelOrders()">Cancel all my orders</button>
-    </td>
-  </tr>
 </table>

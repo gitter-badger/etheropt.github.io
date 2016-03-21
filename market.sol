@@ -7,10 +7,6 @@ contract Market {
   }
   struct Option {
     int strike;
-    mapping(uint => Order) buyOrders;
-    uint numBuyOrders;
-    mapping(uint => Order) sellOrders;
-    uint numSellOrders;
   }
   struct Position {
     mapping(uint => int) positions;
@@ -38,6 +34,15 @@ contract Market {
     address user;
     int capital;
   }
+  mapping(bytes32 => int) orderFills; //keeps track of cumulative order fills
+  struct MarketMaker {
+    address user;
+    string server;
+  }
+  mapping(uint => MarketMaker) marketMakers; //starts at 1
+  uint public numMarketMakers = 0;
+  uint maxMarketMakers = 6;
+  mapping(address => uint) marketMakerIDs;
   mapping(uint => Account) accounts;
   uint numAccounts;
   mapping(address => uint) accountIDs; //starts at 1
@@ -60,7 +65,6 @@ contract Market {
     if (accountIDs[msg.sender]>0) {
       if (int(amount)<=getFunds(msg.sender, true)) {
         accounts[accountIDs[msg.sender]].capital -= int(amount);
-        cancelOrders();
         msg.sender.send(amount);
       }
     }
@@ -80,6 +84,49 @@ contract Market {
 
   function getFundsAndAvailable(address user) constant returns(int, int) {
     return (getFunds(user, false), getFunds(user, true));
+  }
+
+  function marketMaker(string server) {
+    if (msg.value>0) throw;
+    if (marketMakerIDs[msg.sender]>0) {
+      marketMakers[marketMakerIDs[msg.sender]].server = server;
+    } else {
+      int funds = getFunds(marketMakers[i].user, false);
+      uint marketMakerID = 0;
+      if (numMarketMakers<maxMarketMakers) {
+        marketMakerID = ++numMarketMakers;
+      } else {
+        for (uint i=2; i<=numMarketMakers; i++) {
+          if (getFunds(marketMakers[i].user, false)<=funds && (marketMakerID==0 || getFunds(marketMakers[i].user, false)<getFunds(marketMakers[marketMakerID].user, false))) {
+            marketMakerID = i;
+          }
+        }
+      }
+      if (marketMakerID>0) {
+        marketMakerIDs[marketMakers[marketMakerID].user] = 0;
+        marketMakers[marketMakerID].user = msg.sender;
+        marketMakers[marketMakerID].server = server;
+        marketMakerIDs[msg.sender] = marketMakerID;
+      } else {
+        throw;
+      }
+    }
+  }
+
+  function getMarketMakers() constant returns(string, string, string, string, string, string) {
+    string[] memory servers = new string[](6);
+    for (uint i=1; i<=numMarketMakers; i++) {
+      servers[i-1] = marketMakers[i].server;
+    }
+    return (servers[0], servers[1], servers[2], servers[3], servers[4], servers[5]);
+  }
+
+  function getMarketMakerFunds() constant returns(int, int, int, int, int, int) {
+    int[] memory funds = new int[](6);
+    for (uint i=1; i<=numMarketMakers; i++) {
+      funds[i-1] = getFunds(marketMakers[i].user, false);
+    }
+    return (funds[0], funds[1], funds[2], funds[3], funds[4], funds[5]);
   }
 
   function getOptionChain(uint optionChainID) constant returns (uint, string, uint, uint, bytes32, address) {
@@ -104,23 +151,6 @@ contract Market {
       }
     }
     return (optionIDs, strikes, positions, cashes);
-  }
-
-  function getMarketTopLevels() constant returns(uint[], uint[], uint[], uint[]) {
-    uint[] memory buyPrices = new uint[](60);
-    uint[] memory buySizes = new uint[](60);
-    uint[] memory sellPrices = new uint[](60);
-    uint[] memory sellSizes = new uint[](60);
-    uint z = 0;
-    for (int optionChainID=int(numOptionChains)-1; optionChainID>=0 && z<60; optionChainID--) {
-      if (optionChains[uint(optionChainID)].expired == false) {
-        for (uint optionID=0; optionID<optionChains[uint(optionChainID)].numOptions; optionID++) {
-          (buyPrices[z], buySizes[z], sellPrices[z], sellSizes[z]) = getTopLevel(uint(optionChainID), optionID);
-          z++;
-        }
-      }
-    }
-    return (buyPrices, buySizes, sellPrices, sellSizes);
   }
 
   function expire(uint accountID, uint optionChainID, uint8 v, bytes32 r, bytes32 s, bytes32 value) {
@@ -209,172 +239,29 @@ contract Market {
     }
   }
 
-  function placeBuyOrder(uint optionChainID, uint optionID, uint price, uint size) {
-    if (getFunds(msg.sender, false)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, int(size), -int(size * price))>0) {
-      bool foundMatch = true;
-      while (foundMatch && size>0) {
-        int bestPriceID = -1;
-        for (uint i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
-          if (optionChains[optionChainID].options[optionID].sellOrders[i].price<=price && optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && (bestPriceID<0 || optionChains[optionChainID].options[optionID].sellOrders[i].price<optionChains[optionChainID].options[optionID].sellOrders[uint(bestPriceID)].price)) {
-            bestPriceID = int(i);
-          }
-        }
-        if (bestPriceID<0) {
-          foundMatch = false;
-        } else {
-          size = orderMatchBuy(optionChainID, optionID, price, size, uint(bestPriceID));
-        }
-      }
-      if (size>0) {
-        uint orderID = 5;
-        if (optionChains[optionChainID].options[optionID].numBuyOrders < 5) {
-          orderID = optionChains[optionChainID].options[optionID].numBuyOrders++;
-        } else {
-          for (i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders && (orderID>=5 || optionChains[optionChainID].options[optionID].buyOrders[orderID].size!=0); i++) {
-            if (optionChains[optionChainID].options[optionID].buyOrders[i].size==0) {
-              orderID = i;
-            } else if (optionChains[optionChainID].options[optionID].buyOrders[i].price<price && (orderID>=5 || (optionChains[optionChainID].options[optionID].buyOrders[i].price<optionChains[optionChainID].options[optionID].buyOrders[orderID].price))) {
-              orderID = i;
-            }
-          }
-        }
-        if (orderID<5) {
-          optionChains[optionChainID].options[optionID].buyOrders[orderID] = Order(price, size, msg.sender);
-        }
-      }
+  function orderMatchTest(uint optionChainID, uint optionID, uint price, int size, uint orderID, uint blockExpires, address addr, address sender, int matchSize) constant returns(bool) {
+    if (block.number<=blockExpires && ((size>0 && matchSize<0 && orderFills[sha3(optionChainID, optionID, price, size, orderID, blockExpires)]-matchSize<=size) || (size<0 && matchSize>0 && orderFills[sha3(optionChainID, optionID, price, size, orderID, blockExpires)]-matchSize>=size)) && getFunds(addr, false)+getMaxLossAfterTrade(addr, optionChainID, optionID, -matchSize, matchSize * int(price))>0 && getFunds(sender, false)+getMaxLossAfterTrade(sender, optionChainID, optionID, matchSize, -matchSize * int(price))>0) {
+      return true;
     }
+    return false;
   }
 
-  function placeSellOrder(uint optionChainID, uint optionID, uint price, uint size) {
-    if (getFunds(msg.sender, false)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, -int(size), int(size * price))>0) {
-      bool foundMatch = true;
-      while (foundMatch && size>0) {
-        int bestPriceID = -1;
-        for (uint i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
-          if (optionChains[optionChainID].options[optionID].buyOrders[i].price>=price && optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && (bestPriceID<0 || optionChains[optionChainID].options[optionID].buyOrders[i].price>optionChains[optionChainID].options[optionID].buyOrders[uint(bestPriceID)].price)) {
-            bestPriceID = int(i);
-          }
-        }
-        if (bestPriceID<0) {
-          foundMatch = false;
-        } else {
-          size = orderMatchSell(optionChainID, optionID, price, size, uint(bestPriceID));
-        }
-      }
-      if (size>0) {
-        uint orderID = 5;
-        if (optionChains[optionChainID].options[optionID].numSellOrders < 5) {
-          orderID = optionChains[optionChainID].options[optionID].numSellOrders++;
-        } else {
-          for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders && (orderID>=5 || optionChains[optionChainID].options[optionID].sellOrders[orderID].size!=0); i++) {
-            if (optionChains[optionChainID].options[optionID].sellOrders[i].size==0) {
-              orderID = i;
-            } else if (optionChains[optionChainID].options[optionID].sellOrders[i].price>price && (orderID>=5 || (optionChains[optionChainID].options[optionID].sellOrders[i].price>optionChains[optionChainID].options[optionID].sellOrders[orderID].price))) {
-              orderID = i;
-            }
-          }
-        }
-        if (orderID<5) {
-          optionChains[optionChainID].options[optionID].sellOrders[orderID] = Order(price, size, msg.sender);
-        }
-      }
-    }
-  }
-
-  function orderMatchBuy(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint) {
-    uint sizeChange = min(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size, size);
-    if (getFunds(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user, false)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user, optionChainID, optionID, -int(sizeChange), int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price))>0) {
-      size -= sizeChange;
+  function orderMatch(uint optionChainID, uint optionID, uint price, int size, uint orderID, uint blockExpires, address addr, uint8 v, bytes32 r, bytes32 s, int matchSize) {
+    bytes32 hash = sha256(optionChainID, optionID, price, size, orderID, blockExpires);
+    if (ecrecover(hash, v, r, s) == addr && block.number<=blockExpires && ((size>0 && matchSize<0 && orderFills[hash]-matchSize<=size) || (size<0 && matchSize>0 && orderFills[hash]-matchSize>=size)) && getFunds(addr, false)+getMaxLossAfterTrade(addr, optionChainID, optionID, -matchSize, matchSize * int(price))>0 && getFunds(msg.sender, false)+getMaxLossAfterTrade(msg.sender, optionChainID, optionID, matchSize, -matchSize * int(price))>0) {
       if (optionChains[optionChainID].positions[msg.sender].hasPosition == false) {
         optionChains[optionChainID].positions[msg.sender].hasPosition = true;
         optionChains[optionChainID].numPositions++;
       }
-      if (optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].hasPosition == false) {
-        optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].hasPosition = true;
+      if (optionChains[optionChainID].positions[addr].hasPosition == false) {
+        optionChains[optionChainID].positions[addr].hasPosition = true;
         optionChains[optionChainID].numPositions++;
       }
-      optionChains[optionChainID].positions[msg.sender].positions[optionID] += int(sizeChange);
-      optionChains[optionChainID].positions[msg.sender].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price);
-      optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size -= sizeChange;
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].positions[optionID] -= int(sizeChange);
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].user].cash += int(sizeChange * optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].price);
-    } else {
-      optionChains[optionChainID].options[optionID].sellOrders[bestPriceID].size = 0;
-    }
-    return size;
-  }
-
-  function orderMatchSell(uint optionChainID, uint optionID, uint price, uint size, uint bestPriceID) private returns(uint) {
-    uint sizeChange = min(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size, size);
-    if (getFunds(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user, false)+getMaxLossAfterTrade(optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user, optionChainID, optionID, int(sizeChange), -int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price))>0) {
-      size -= sizeChange;
-      if (optionChains[optionChainID].positions[msg.sender].hasPosition == false) {
-        optionChains[optionChainID].positions[msg.sender].hasPosition = true;
-        optionChains[optionChainID].numPositions++;
-      }
-      if (optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].hasPosition == false) {
-        optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].hasPosition = true;
-        optionChains[optionChainID].numPositions++;
-      }
-      optionChains[optionChainID].positions[msg.sender].positions[optionID] -= int(sizeChange);
-      optionChains[optionChainID].positions[msg.sender].cash += int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price);
-      optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size -= sizeChange;
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].positions[optionID] += int(sizeChange);
-      optionChains[optionChainID].positions[optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].user].cash -= int(sizeChange * optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].price);
-    } else {
-      optionChains[optionChainID].options[optionID].buyOrders[bestPriceID].size = 0;
-    }
-    return size;
-  }
-
-  function getTopLevel(uint optionChainID, uint optionID) private constant returns(uint, uint, uint, uint) {
-    uint buyPrice = 0;
-    uint buySize = 0;
-    uint sellPrice = 0;
-    uint sellSize = 0;
-    uint watermark = 0;
-    uint size = 0;
-    for (uint i=0; i<optionChains[optionChainID].options[optionID].numBuyOrders; i++) {
-      if (optionChains[optionChainID].options[optionID].buyOrders[i].size>0 && optionChains[optionChainID].options[optionID].buyOrders[i].price>=watermark) {
-        if (optionChains[optionChainID].options[optionID].buyOrders[i].price>watermark) {
-          size = 0;
-          watermark = optionChains[optionChainID].options[optionID].buyOrders[i].price;
-        }
-        size += optionChains[optionChainID].options[optionID].buyOrders[i].size;
-      }
-    }
-    buyPrice = watermark;
-    buySize = size;
-    watermark = uint(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-    size = 0;
-    for (i=0; i<optionChains[optionChainID].options[optionID].numSellOrders; i++) {
-      if (optionChains[optionChainID].options[optionID].sellOrders[i].size>0 && optionChains[optionChainID].options[optionID].sellOrders[i].price<=watermark) {
-        if (optionChains[optionChainID].options[optionID].sellOrders[i].price<watermark) {
-          size = 0;
-          watermark = optionChains[optionChainID].options[optionID].sellOrders[i].price;
-        }
-        size += optionChains[optionChainID].options[optionID].sellOrders[i].size;
-      }
-    }
-    sellPrice = watermark;
-    sellSize = size;
-    return (buyPrice, buySize, sellPrice, sellSize);
-  }
-
-  function cancelOrders() {
-    for (uint optionChainID=0; optionChainID<numOptionChains; optionChainID++) {
-      for (uint i=0; i<optionChains[optionChainID].numOptions; i++) {
-        for (uint j=0; j<optionChains[optionChainID].options[i].numBuyOrders; j++) {
-          if (optionChains[optionChainID].options[i].buyOrders[j].user==msg.sender) {
-            optionChains[optionChainID].options[i].buyOrders[j].size = 0;
-          }
-        }
-        for (j=0; j<optionChains[optionChainID].options[i].numSellOrders; j++) {
-          if (optionChains[optionChainID].options[i].sellOrders[j].user==msg.sender) {
-            optionChains[optionChainID].options[i].sellOrders[j].size = 0;
-          }
-        }
-      }
+      optionChains[optionChainID].positions[msg.sender].positions[optionID] += matchSize;
+      optionChains[optionChainID].positions[msg.sender].cash -= matchSize * int(price);
+      optionChains[optionChainID].positions[addr].positions[optionID] -= matchSize;
+      optionChains[optionChainID].positions[addr].cash += matchSize * int(price);
+      orderFills[hash] -= matchSize;
     }
   }
 
@@ -423,7 +310,7 @@ contract Market {
     return totalMaxLoss;
   }
 
-  function moneySumAtSettlement(address user, uint optionChainID, uint optionID, int positionChange, uint i, uint settlement) constant returns(int) {
+  function moneySumAtSettlement(address user, uint optionChainID, uint optionID, int positionChange, uint i, uint settlement) internal returns(int) {
     int pnl = 0;
     for (uint j=0; j<optionChains[i].numOptions; j++) {
       pnl += optionChains[i].positions[user].positions[j] * getMoneyness(optionChains[i].options[j].strike, settlement, optionChains[i].margin) / 1000000000000000000;

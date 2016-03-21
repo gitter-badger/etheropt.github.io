@@ -1,6 +1,7 @@
 var Web3 = require('web3');
 var utility = require('./utility.js');
 var request = require('request');
+var sha256 = require('js-sha256').sha256;
 var async = (typeof(window) === 'undefined') ? require('async') : require('async/dist/async.min.js');
 
 function Main() {
@@ -78,23 +79,35 @@ Main.deleteAddress = function() {
   selectedAddr = 0;
   Main.refresh();
 }
-Main.buy = function(optionChainID, optionID, price, size) {
+Main.buy = function(order, price, size) {
+  order = JSON.parse(order);
   size = utility.ethToWei(size);
   price = price * 1000000000000000000;
-  utility.proxySend(web3, myContract, config.contract_market_addr, 'placeBuyOrder', [optionChainID, optionID, price, size, {gas: 2000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
-    txHash = result[0];
-    nonce = result[1];
-    Main.alertTxHash(txHash);
-  });
+  if (price==order.price && size>0 && order.size<0 && size<=Math.abs(order.size)) {
+    size = +size;
+    utility.proxyCall(web3, myContract, config.contract_market_addr, 'orderMatchTest', [order.optionChainID, order.optionID, order.price, order.size, order.orderID, order.blockExpires, order.addr, addrs[selectedAddr], size], function(result) {
+      if (result) {
+        utility.proxySend(web3, myContract, config.contract_market_addr, 'orderMatch', [order.optionChainID, order.optionID, order.price, order.size, order.orderID, order.blockExpires, order.addr, order.v, order.r, order.s, size, {gas: 2000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+          txHash = result[0];
+          nonce = result[1];
+          Main.alertTxHash(txHash);
+        });
+      }
+    });
+  }
 }
-Main.sell = function(optionChainID, optionID, price, size) {
+Main.sell = function(order, price, size) {
+  order = JSON.parse(order);
   size = utility.ethToWei(size);
   price = price * 1000000000000000000;
-  utility.proxySend(web3, myContract, config.contract_market_addr, 'placeSellOrder', [optionChainID, optionID, price, size, {gas: 2000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
-    txHash = result[0];
-    nonce = result[1];
-    Main.alertTxHash(txHash);
-  });
+  if (price==order.price && size>0 && order.size>0 && size<=Math.abs(order.size)) {
+    size = -size;
+    utility.proxySend(web3, myContract, config.contract_market_addr, 'orderMatch', [order.optionChainID, order.optionID, order.price, order.size, order.orderID, order.blockExpires, order.addr, order.v, order.r, order.s, size, {gas: 2000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
+      txHash = result[0];
+      nonce = result[1];
+      Main.alertTxHash(txHash);
+    });
+  }
 }
 Main.selectAddress = function(i) {
   selectedAddr = i;
@@ -137,13 +150,6 @@ Main.fund = function(amount) {
 Main.withdraw = function(amount) {
   amount = utility.ethToWei(amount);
   utility.proxySend(web3, myContract, config.contract_market_addr, 'withdrawFunds', [amount, {gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
-    txHash = result[0];
-    nonce = result[1];
-    Main.alertTxHash(txHash);
-  });
-}
-Main.cancelOrders = function() {
-  utility.proxySend(web3, myContract, config.contract_market_addr, 'cancelOrders', [{gas: 1000000, value: 0}], addrs[selectedAddr], pks[selectedAddr], nonce, function(result) {
     txHash = result[0];
     nonce = result[1];
     Main.alertTxHash(txHash);
@@ -215,66 +221,70 @@ Main.loadMarket = function() {
         var tocur = result[1].split("/")[1];
         var margin = result[2].toNumber() / 1000000000000000000.0;
         var realityID = result[3].toNumber();
-				optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur, margin: margin, realityID: realityID};
+        optionChainDescription = {expiration: expiration, fromcur: fromcur, tocur: tocur, margin: margin, realityID: realityID};
         optionChainDescriptions[optionChainID] = optionChainDescription;
       });
     });
-    utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketTopLevels', [], function(result) {
-      var buyPrices = result[0];
-      var buySizes = result[1];
-      var sellPrices = result[2];
-      var sellSizes = result[3];
-      async.map(is,
-        function(i, callback_map) {
-          var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
-          var optionID = optionIDs[i].toNumber() % 1000;
-          var strike = strikes[i].toNumber() / 1000000000000000000;
-          var cash = cashes[i].toNumber() / 1000000000000000000;
-          var position = positions[i].toNumber();
-          var buyPrice = buyPrices[i].toNumber() / 1000000000000000000;
-          var buySize = buySizes[i].toNumber();
-          var sellPrice = sellPrices[i].toNumber() / 1000000000000000000;
-          var sellSize = sellSizes[i].toNumber();
-          var option = Object();
-          if (strike>0) {
-            option.kind = 'Call';
-          } else {
-            option.kind = 'Put';
-          }
-          option.strike = Math.abs(strike);
-          option.optionChainID = optionChainID;
-          option.optionID = optionID;
-          option.cash = cash;
-          option.position = position;
-          option.buy_orders = [];
-          if (buySize>0) {
-            option.buy_orders.push({price: buyPrice, size: buySize});
-          }
-          option.sell_orders = [];
-          if (sellSize>0) {
-            option.sell_orders.push({price: sellPrice, size: sellSize});
-          }
-          async.whilst(
-            function () { return !(optionChainID in optionChainDescriptions) },
-            function (callback) {
-                setTimeout(function () {
-                    callback(null);
-                }, 1000);
+    utility.proxyCall(web3, myContract, config.contract_market_addr, 'getMarketMakers', [], function(result) {
+      var market_makers = result.filter(function(x){return x!=''});
+      async.reduce(market_makers, [],
+        function(memo, market_maker, callback) {
+          request.get(market_maker, function(err, httpResponse, body) {
+            try {
+              callback(null, memo.concat(JSON.parse(body)));
+            } catch (err) {
+              callback(null, memo);
+            }
+          });
+        },
+        function(err, markets){
+          async.map(is,
+            function(i, callback_map) {
+              var optionChainID = Math.floor(optionIDs[i].toNumber() / 1000);
+              var optionID = optionIDs[i].toNumber() % 1000;
+              var strike = strikes[i].toNumber() / 1000000000000000000;
+              var cash = cashes[i].toNumber() / 1000000000000000000;
+              var position = positions[i].toNumber();
+              var option = Object();
+              if (strike>0) {
+                option.kind = 'Call';
+              } else {
+                option.kind = 'Put';
+              }
+              option.strike = Math.abs(strike);
+              option.optionChainID = optionChainID;
+              option.optionID = optionID;
+              option.cash = cash;
+              option.position = position;
+              var orders = markets.filter(function(x){return x.optionChainID==optionChainID && x.optionID==optionID});
+              orders = orders.map(function(x){return {size: Math.abs(x.size), price: x.price/1000000000000000000, order: x}});
+              option.buy_orders = orders.filter(function(x){return x.order.size>0});
+              option.sell_orders = orders.filter(function(x){return x.order.size<0});
+              option.buy_orders.sort(function(a, b) {return b.price - a.price});
+              option.sell_orders.sort(function(a, b) {return a.price - b.price});
+              async.whilst(
+                function () { return !(optionChainID in optionChainDescriptions) },
+                function (callback) {
+                    setTimeout(function () {
+                        callback(null);
+                    }, 1000);
+                },
+                function (err) {
+                  option.expiration = optionChainDescriptions[optionChainID].expiration;
+                  option.fromcur = optionChainDescriptions[optionChainID].fromcur;
+                  option.tocur = optionChainDescriptions[optionChainID].tocur;
+                  option.margin = optionChainDescriptions[optionChainID].margin;
+                  callback_map(null, option);
+                }
+              );
             },
-            function (err) {
-              option.expiration = optionChainDescriptions[optionChainID].expiration;
-              option.fromcur = optionChainDescriptions[optionChainID].fromcur;
-              option.tocur = optionChainDescriptions[optionChainID].tocur;
-              option.margin = optionChainDescriptions[optionChainID].margin;
-              callback_map(null, option);
+            function(err, options) {
+              options.sort(function(a,b){ return a.expiration+(a.strike+10000000).toFixed(3).toString()+a.kind<b.expiration+(b.strike+10000000).toFixed(3).toString()+b.kind ? -1 : 1 });
+              new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
+              $('#market-spinner').hide();
+              Main.tooltips();
             }
           );
-        },
-        function(err, options) {
-          options.sort(function(a,b){ return a.expiration+a.strike.toFixed(3).toString()+a.kind<b.expiration+b.strike.toFixed(3).toString()+b.kind ? -1 : 1 });
-          new EJS({url: config.home_url+'/'+'market.ejs'}).update('market', {options: options});
-          $('#market-spinner').hide();
-          Main.tooltips();
         }
       );
     });

@@ -1,20 +1,48 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="400px" height="400px" viewBox="0 0 400 400" style="enable-background:new 0 0 400 400;" xml:space="preserve">
-<rect x="160" style="fill:#00FF00;" width="80" height="80"/>
-<rect x="160" y="80" style="fill:#009900;" width="80" height="80"/>
-<rect x="160" y="160" style="fill:#003300;" width="80" height="80"/>
-<rect x="160" y="240" style="fill:#009900;" width="80" height="80"/>
-<rect x="160" y="319.999" style="fill:#00FF00;" width="80" height="80.001"/>
-<rect x="240" y="160" style="fill:#009900;" width="80" height="80"/>
-<rect x="320" y="160" style="fill:#00FF00;" width="80" height="80"/>
-<rect y="160" style="fill:#00FF00;" width="80" height="80"/>
-<rect x="80" y="160" style="fill:#009900;" width="80" height="80"/>
-<rect x="240" y="80" style="fill:#00FF00;" width="80" height="80"/>
-<rect x="80" y="80" style="fill:#00FF00;" width="80" height="80"/>
-<rect x="80" y="240" style="fill:#00FF00;" width="80" height="80"/>
-<rect x="240" y="240" style="fill:#00FF00;" width="80" height="80"/>
-<path style="fill:none;stroke:#FFFFFF;stroke-width:25;stroke-miterlimit:10;" d="M120.909,265.845c0,0,80,0,80-80s80-80,80-80"/>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="400px"
+	 height="400px" viewBox="0 0 400 400" style="enable-background:new 0 0 400 400;" xml:space="preserve">
+<g id="Layer_1">
+</g>
+<g id="Layer_2">
+	<g>
+		<defs>
+			<circle id="SVGID_1_" cx="-220" cy="200" r="186.5"/>
+		</defs>
+		<clipPath id="SVGID_2_">
+			<use xlink:href="#SVGID_1_"  style="overflow:visible;"/>
+		</clipPath>
+		<rect x="-60.711" y="146.904" style="clip-path:url(#SVGID_2_);fill:#00FF00;" width="106.192" height="106.192"/>
+	</g>
+	<g>
+		
+			<rect x="176.848" y="125.477" style="fill:#FF0000;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" width="46.299" height="202.684"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="199.998" y1="125.477" x2="199.998" y2="90.117"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="199.998" y1="328.161" x2="199.998" y2="382.487"/>
+		
+			<rect x="243.941" y="192.783" style="fill:#00FF00;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" width="46.301" height="136.906"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="267.092" y1="192.783" x2="267.092" y2="107.795"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="267.092" y1="329.689" x2="267.092" y2="366.391"/>
+		
+			<rect x="311.039" y="54.566" style="fill:#00FF00;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" width="46.297" height="136.908"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="334.189" y1="54.566" x2="334.189" y2="17.513"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="334.189" y1="191.474" x2="334.189" y2="254.847"/>
+		
+			<rect x="109.754" y="73.47" style="fill:#FF0000;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" width="46.291" height="50.72"/>
+		<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="132.9" y1="73.47" x2="132.9" y2="64.625"/>
+		<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="132.9" y1="124.189" x2="132.9" y2="236.953"/>
+		
+			<rect x="42.664" y="75.242" style="fill:#00FF00;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" width="46.291" height="135.478"/>
+		<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="65.807" y1="75.242" x2="65.807" y2="51.604"/>
+		
+			<line style="fill:none;stroke:#000000;stroke-width:10;stroke-miterlimit:10;" x1="65.807" y1="210.72" x2="65.807" y2="328.161"/>
+	</g>
+</g>
 </svg>
